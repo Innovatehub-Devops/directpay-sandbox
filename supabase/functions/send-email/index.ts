@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as nodemailer from "npm:nodemailer@6.9.1";
 
@@ -21,28 +22,48 @@ serve(async (req) => {
     console.log(`Processing email request of type: ${type}`);
     console.log(`User data:`, JSON.stringify(userData));
 
-    // Create SMTP transporter
-    const transporterConfig = {
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: Deno.env.get("SMTP_USERNAME"),
-        pass: Deno.env.get("SMTP_PASSWORD"),
-      },
-    };
+    // Create test SMTP service for development/testing
+    let transporter;
+    let testAccount;
+    let isEthereal = false;
 
-    console.log("Setting up email transporter with Gmail SMTP...");
-    
-    const transporter = nodemailer.createTransport(transporterConfig);
-    
-    // Verify SMTP connection
     try {
+      // First try using Gmail SMTP if credentials are available
+      if (Deno.env.get("SMTP_USERNAME") && Deno.env.get("SMTP_PASSWORD")) {
+        console.log("Attempting to use Gmail SMTP service");
+        transporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          auth: {
+            user: Deno.env.get("SMTP_USERNAME"),
+            pass: Deno.env.get("SMTP_PASSWORD"),
+          },
+        });
+      } else {
+        // Fallback to Ethereal for testing
+        console.log("Gmail credentials not found, using Ethereal test account");
+        testAccount = await nodemailer.createTestAccount();
+        isEthereal = true;
+        
+        transporter = nodemailer.createTransport({
+          host: "smtp.ethereal.email",
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+      }
+      
+      // Verify SMTP connection
       await transporter.verify();
-      console.log("SMTP connection verified successfully");
-    } catch (verifyError) {
-      console.error("SMTP connection verification failed:", verifyError);
-      throw new Error("Failed to establish SMTP connection");
+      console.log("SMTP connection verified");
+      
+    } catch (smtpError) {
+      console.error("Failed to set up SMTP:", smtpError);
+      throw new Error(`SMTP setup failed: ${smtpError.message}`);
     }
 
     if (type === "request_approval") {
@@ -53,7 +74,7 @@ serve(async (req) => {
       console.log(`Approval URL: ${approvalUrl}`);
       
       const adminMailOptions = {
-        from: `"DirectPay API" <${transporterConfig.auth.user}>`,
+        from: isEthereal ? testAccount.user : `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
         to: adminEmail,
         subject: "New Sandbox Access Request",
         html: `
@@ -80,12 +101,21 @@ serve(async (req) => {
       };
 
       try {
-        console.log("Attempting to send admin email...");
+        console.log("Sending admin approval email...");
         const info = await transporter.sendMail(adminMailOptions);
-        console.log("Admin approval email sent successfully:", info);
+        console.log("Admin approval email sent:", JSON.stringify(info));
+        
+        // If using Ethereal, provide test URL
+        if (isEthereal) {
+          console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        }
         
         return new Response(
-          JSON.stringify({ success: true, message: "Approval request sent successfully" }),
+          JSON.stringify({ 
+            success: true, 
+            message: "Approval request sent successfully",
+            testMode: isEthereal
+          }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -121,7 +151,7 @@ serve(async (req) => {
       console.log(`Login URL: ${loginUrl}`);
       
       const userMailOptions = {
-        from: `"DirectPay API" <${transporterConfig.auth.user}>`,
+        from: isEthereal ? testAccount.user : `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
         to: userData.email,
         subject: "Your Sandbox Access Has Been Approved!",
         html: `
@@ -157,27 +187,30 @@ serve(async (req) => {
       };
 
       try {
-        console.log("Attempting to send user notification email...");
+        console.log("Sending user notification email...");
         const info = await transporter.sendMail(userMailOptions);
-        console.log("User notification email sent successfully:", info);
+        console.log("User notification email sent successfully:", JSON.stringify(info));
         
-        if (transporterConfig.host === "smtp.ethereal.email") {
+        if (isEthereal) {
           // If using ethereal, log the URL to view the test email
           console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
         }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Approval notification sent",
+            testMode: isEthereal 
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       } catch (emailError) {
         console.error("Failed to send user notification email:", emailError);
-        // For development/testing, we'll still mark this as a success
+        throw new Error(`Failed to send notification email: ${emailError.message}`);
       }
-      
-      // Always return success for testing purposes
-      return new Response(
-        JSON.stringify({ success: true, message: "Approval notification sent" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
     }
 
     return new Response(

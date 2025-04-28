@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function AccessForm() {
   const [name, setName] = useState("");
@@ -15,9 +18,11 @@ export function AccessForm() {
   const [useCase, setUseCase] = useState("");
   const [apiAccess, setApiAccess] = useState("sandbox");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
     
     // Basic validation
     if (!name || !email || !company || !useCase) {
@@ -41,6 +46,8 @@ export function AccessForm() {
       
       console.log("Sending access request...");
       
+      toast.info("Submitting your request...");
+      
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
           type: 'request_approval',
@@ -51,6 +58,8 @@ export function AccessForm() {
       
       if (error) {
         console.error("Error response from Edge Function:", error);
+        setErrorMessage(`Failed to send access request: ${error.message || "Unknown error"}`);
+        toast.error("Failed to send your request. Please try again later.");
         throw new Error(error.message || "Failed to send access request");
       }
       
@@ -59,6 +68,10 @@ export function AccessForm() {
       if (data?.success) {
         toast.success("Your request has been submitted! You will receive an email once approved.");
         
+        if (data?.testMode) {
+          toast.info("Note: Running in test mode. No actual emails were sent.");
+        }
+        
         // Reset form
         setName("");
         setEmail("");
@@ -66,10 +79,12 @@ export function AccessForm() {
         setUseCase("");
         setApiAccess("sandbox");
       } else {
+        setErrorMessage("Request failed: " + (data?.error || "Unknown error"));
         throw new Error("Request failed");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting form:", error);
+      setErrorMessage(error.message || "There was an error submitting your request. Please try again later.");
       toast.error("There was an error submitting your request. Please try again later.");
     } finally {
       setIsSubmitting(false);
@@ -86,6 +101,14 @@ export function AccessForm() {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
