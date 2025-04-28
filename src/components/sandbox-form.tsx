@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -293,7 +292,7 @@ export function SandboxForm() {
                 <Button variant="outline" size="sm" onClick={copyResponse}>
                   <Clipboard className="h-4 w-4 mr-2" /> Copy JSON
                 </Button>
-                {response.endpoint === "/api/v1/payments/cash-in" && (
+                {response.endpoint === "/api/v1/payments/cash-in" && response.data.checkout_url && (
                   <Button 
                     size="sm"
                     onClick={() => setShowPaymentSimulator(true)}
