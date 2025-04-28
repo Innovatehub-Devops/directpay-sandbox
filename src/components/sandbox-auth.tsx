@@ -1,21 +1,44 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function SandboxAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [autoLoginMessage, setAutoLoginMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Check for auto-login parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const token = searchParams.get("token");
+    const autoLoginEmail = searchParams.get("email");
+    
+    if (token && autoLoginEmail) {
+      setEmail(autoLoginEmail);
+      setPassword("directpay123"); // Default password for auto-login
+      setAutoLoginMessage("Auto-login from approval email detected. Signing you in...");
+      
+      // Small delay to show the message before auto-login
+      const timer = setTimeout(() => {
+        handleLogin(null, true);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
+  const handleLogin = async (e: React.FormEvent | null, isAutoLogin = false) => {
+    if (e) e.preventDefault();
     setIsLoading(true);
 
     try {
@@ -37,7 +60,13 @@ export function SandboxAuth() {
       }
 
       localStorage.setItem('sandbox_user', JSON.stringify(data));
-      toast.success("Login successful!");
+      
+      if (isAutoLogin) {
+        toast.success("You've been automatically logged in!");
+      } else {
+        toast.success("Login successful!");
+      }
+      
       navigate('/sandbox');
     } catch (error) {
       toast.error("An error occurred during login");
@@ -61,6 +90,12 @@ export function SandboxAuth() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {autoLoginMessage && (
+          <Alert className="mb-4 bg-green-50">
+            <AlertDescription>{autoLoginMessage}</AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -86,6 +121,12 @@ export function SandboxAuth() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}
           </Button>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">
+              Need access? <a href="/access" className="text-blue-600 hover:underline">Request here</a>
+            </p>
+          </div>
         </form>
       </CardContent>
     </Card>

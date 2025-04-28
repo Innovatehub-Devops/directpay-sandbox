@@ -7,16 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AccessForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [useCase, setUseCase] = useState("");
-  const [apiAccess, setApiAccess] = useState("production");
+  const [apiAccess, setApiAccess] = useState("sandbox");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -27,17 +28,46 @@ export function AccessForm() {
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Your request has been submitted successfully!");
-      setIsSubmitting(false);
+    try {
+      // Generate a simple approval token (in a real app, use a more secure method)
+      const approvalToken = btoa(`${email}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
+      
+      // User data to be sent
+      const userData = {
+        name,
+        email,
+        company,
+        useCase,
+        apiAccess
+      };
+      
+      // Send request to the email function
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'request_approval',
+          userData,
+          approvalToken
+        }
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast.success("Your request has been submitted! You will receive an email once approved.");
+      
       // Reset form
       setName("");
       setEmail("");
       setCompany("");
       setUseCase("");
-      setApiAccess("production");
-    }, 1500);
+      setApiAccess("sandbox");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("There was an error submitting your request. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
