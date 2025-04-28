@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Enhanced CORS headers to allow requests from any origin during development
@@ -18,6 +17,12 @@ function logRequest(req: Request, message = "") {
   console.log(`[${new Date().toISOString()}] ${req.method} ${url.pathname}${message ? " - " + message : ""}`);
   console.log("  Headers:", Object.fromEntries(req.headers.entries()));
 }
+
+// Static test credentials
+const TEST_CREDENTIALS = {
+  username: "devtest@direct-payph.com",
+  password: "password123"
+};
 
 serve(async (req) => {
   try {
@@ -97,6 +102,20 @@ serve(async (req) => {
                 ...corsHeaders
               }, 
               status: 400 
+            }
+          );
+        }
+
+        // Check against static test credentials
+        if (username !== TEST_CREDENTIALS.username || password !== TEST_CREDENTIALS.password) {
+          return new Response(
+            JSON.stringify({ error: "Invalid credentials" }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              }, 
+              status: 401 
             }
           );
         }
