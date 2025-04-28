@@ -1,22 +1,38 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentSimulatorProps {
   isOpen: boolean;
   onClose: () => void;
   amount: string;
+  redirectUrl?: string;
+  onPaymentSuccess?: () => void;
 }
 
-export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorProps) {
+export function PaymentSimulator({ isOpen, onClose, amount, redirectUrl, onPaymentSuccess }: PaymentSimulatorProps) {
   const [step, setStep] = useState(1);
   
   const handleOpenGcash = () => {
     setStep(2);
     setTimeout(() => {
       setStep(3);
+    }, 2000);
+  };
+
+  const handlePayment = () => {
+    setStep(5);
+    setTimeout(() => {
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
+      }
+      if (redirectUrl) {
+        window.open(redirectUrl, '_blank');
+      }
+      onClose();
     }, 2000);
   };
   
@@ -168,24 +184,12 @@ export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorPr
         <div className="flex justify-between items-center mb-2">
           <div className="text-lg">GCash</div>
           <div className="flex flex-col items-end">
-            <div className="text-right font-medium">PHP 0.73</div>
+            <div className="text-right font-medium">PHP 5000.00</div>
             <div className="text-sm text-gray-500">Available Balance</div>
           </div>
         </div>
         
-        <div className="flex mb-1">
-          <div className="text-blue-500">Pay now</div>
-          <div className="ml-auto bg-blue-500 rounded-full w-6 h-6 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-        </div>
-        
-        <div className="text-red-500 mb-6">
-          Insufficient Balance<br/>
-          Please reload to proceed
-        </div>
+        <div className="border-b pb-4 mb-4"></div>
         
         <div className="text-blue-600 font-bold mb-4">YOU ARE ABOUT TO PAY</div>
         
@@ -215,20 +219,26 @@ export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorPr
         </div>
         
         <Button 
-          className="w-full bg-blue-200 hover:bg-blue-300 text-blue-600 py-6 rounded-full"
-          onClick={() => {
-            const img = new Image();
-            img.src = "/lovable-uploads/83c8e501-00a7-460d-8fa7-cb5ab1335842.png";
-            img.onload = () => {
-              toast.success("Payment successful!");
-              setTimeout(() => {
-                onClose();
-              }, 2000);
-            };
-          }}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6 rounded-full"
+          onClick={handlePayment}
         >
           PAY PHP {parseInt(amount) / 100}.00
         </Button>
+      </div>
+    </div>
+  );
+
+  const renderStepFive = () => (
+    <div className="bg-white h-full flex flex-col items-center justify-center p-8 text-center">
+      <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6">
+        <Check className="w-10 h-10 text-white" />
+      </div>
+      <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
+      <p className="text-gray-600 mb-4">
+        PHP {parseInt(amount) / 100}.00 has been paid successfully
+      </p>
+      <div className="text-sm text-gray-500">
+        Redirecting to merchant...
       </div>
     </div>
   );
@@ -243,6 +253,8 @@ export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorPr
         return renderStepThree();
       case 4:
         return renderStepFour();
+      case 5:
+        return renderStepFive();
       default:
         return renderStepOne();
     }

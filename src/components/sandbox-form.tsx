@@ -21,9 +21,9 @@ export function SandboxForm() {
   const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("testuser@example.com");
   const [password, setPassword] = useState("password123");
-  const [amount, setAmount] = useState("5000");
-  const [webhookUrl, setWebhookUrl] = useState("https://example.com/webhook");
-  const [redirectUrl, setRedirectUrl] = useState("https://example.com/success");
+  const [amount, setAmount] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("");
   const [sessionToken, setSessionToken] = useState("");
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [history, setHistory] = useState<ApiResponse[]>([]);
@@ -89,8 +89,8 @@ export function SandboxForm() {
   };
 
   const handleCashIn = () => {
-    if (!sessionToken) {
-      toast.error("Session token is required");
+    if (!amount) {
+      toast.error("Amount is required");
       return;
     }
 
@@ -107,7 +107,9 @@ export function SandboxForm() {
           status: "pending",
           created_at: new Date().toISOString(),
           amount: parseInt(amount),
-          currency: "PHP"
+          currency: "PHP",
+          webhook_url: webhookUrl || null,
+          redirect_url: redirectUrl || null
         },
         status: 200,
         endpoint: "/api/v1/payments/cash-in",
@@ -133,6 +135,39 @@ export function SandboxForm() {
     setResponse(item);
   };
 
+  const handlePaymentSuccess = () => {
+    const successResponse = {
+      data: {
+        payment_id: paymentId,
+        status: "completed",
+        amount: parseInt(amount),
+        currency: "PHP",
+        completed_at: new Date().toISOString()
+      },
+      status: 200,
+      endpoint: "/api/v1/payments/status",
+      method: "GET",
+      timestamp: new Date().toISOString()
+    };
+    
+    setResponse(successResponse);
+    setHistory([successResponse, ...history]);
+    toast.success("Payment completed successfully");
+  };
+
+  const getCurlExample = () => {
+    return `curl -X POST \\
+  'https://api.directpay.com/v1/payments/cash-in' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Authorization: Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}' \\
+  -d '{
+    "amount": ${amount || "5000"},
+    "currency": "PHP",
+    "webhook_url": "${webhookUrl || "https://your-webhook-url.com"}",
+    "redirect_url": "${redirectUrl || "https://your-success-url.com"}"
+  }'`;
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -140,101 +175,16 @@ export function SandboxForm() {
           <CardHeader>
             <CardTitle>API Sandbox</CardTitle>
             <CardDescription>
-              Test the Direct Pay API endpoints with this interactive sandbox.
+              Test Direct Pay API endpoints with this interactive sandbox.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="step1">Step 1: CSRF Token</TabsTrigger>
-                <TabsTrigger value="step2" disabled={!csrfToken}>Step 2: Login</TabsTrigger>
-                <TabsTrigger value="step3" disabled={!sessionToken}>Step 3: Cash In</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="step1">Cash In</TabsTrigger>
               </TabsList>
               
               <TabsContent value="step1" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Request a CSRF token that will be used for authentication.
-                  </p>
-                  <Button onClick={handleGetCSRFToken} disabled={isLoading}>
-                    {isLoading ? "Requesting..." : "Request CSRF Token"}
-                  </Button>
-                </div>
-
-                {csrfToken && (
-                  <div className="pt-4">
-                    <Label htmlFor="csrf-token">CSRF Token</Label>
-                    <div className="flex mt-1.5">
-                      <Input
-                        id="csrf-token"
-                        value={csrfToken}
-                        readOnly
-                        className="font-mono text-sm"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="ml-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(csrfToken);
-                          toast.success("CSRF token copied");
-                        }}
-                      >
-                        <Clipboard className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {csrfToken && (
-                  <div className="pt-4">
-                    <Button onClick={() => setActiveTab("step2")} className="w-full">
-                      Continue to Login
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="step2" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter your username"
-                    />
-                  </div>
-                  
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                    />
-                  </div>
-                  
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="csrf">CSRF Token</Label>
-                    <Input
-                      id="csrf"
-                      value={csrfToken}
-                      readOnly
-                      className="font-mono text-sm"
-                    />
-                  </div>
-                  
-                  <Button onClick={handleLogin} disabled={isLoading || !username || !password || !csrfToken} className="w-full">
-                    {isLoading ? "Logging in..." : "Login"}
-                  </Button>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="step3" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="amount">Amount (in cents)</Label>
@@ -243,10 +193,10 @@ export function SandboxForm() {
                       type="number"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Enter amount in cents"
+                      placeholder="Enter amount in cents (e.g., 5000 = PHP 50.00)"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Enter amount in cents (e.g., 5000 = $50.00)
+                      Enter amount in cents (e.g., 5000 = PHP 50.00)
                     </p>
                   </div>
                   
@@ -270,9 +220,22 @@ export function SandboxForm() {
                     />
                   </div>
                   
-                  <Button onClick={handleCashIn} disabled={isLoading || !amount || !webhookUrl || !redirectUrl || !sessionToken} className="w-full">
+                  <Button 
+                    onClick={handleCashIn} 
+                    disabled={isLoading} 
+                    className="w-full"
+                  >
                     {isLoading ? "Processing..." : "Create Cash-In Request"}
                   </Button>
+
+                  <div className="mt-6">
+                    <Label>CURL Example</Label>
+                    <CodeBlock
+                      code={getCurlExample()}
+                      language="bash"
+                      title="API Request Example"
+                    />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -289,7 +252,12 @@ export function SandboxForm() {
                 </CardDescription>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={copyResponse}>
+                <Button variant="outline" size="sm" onClick={() => {
+                  if (response) {
+                    navigator.clipboard.writeText(JSON.stringify(response.data, null, 2));
+                    toast.success("Response copied to clipboard");
+                  }
+                }}>
                   <Clipboard className="h-4 w-4 mr-2" /> Copy JSON
                 </Button>
                 {response.endpoint === "/api/v1/payments/cash-in" && response.data.checkout_url && (
@@ -375,6 +343,8 @@ export function SandboxForm() {
         isOpen={showPaymentSimulator} 
         onClose={() => setShowPaymentSimulator(false)}
         amount={amount}
+        redirectUrl={redirectUrl}
+        onPaymentSuccess={handlePaymentSuccess}
       />
     </div>
   );
