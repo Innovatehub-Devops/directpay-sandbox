@@ -9,6 +9,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle } from "lucide-react";
 
+// Test accounts for sandbox environment
+const TEST_ACCOUNTS = ['test.dev1@directpay.com', 'test.dev2@directpay.com'];
+const TEST_PASSWORD = 'directpay123';
+
 export function SandboxAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,27 +27,22 @@ export function SandboxAuth() {
     setErrorMsg("");
 
     try {
-      // First try the sandbox_users table for predefined test accounts
-      const { data: sandboxUsers, error: sandboxError } = await supabase
-        .from('sandbox_users')
-        .select('*')
-        .eq('email', email)
-        .single();
-      
-      if (sandboxUsers && password === 'directpay123') {
-        // For test accounts, we accept the hardcoded password
+      // Special handling for test accounts
+      if (TEST_ACCOUNTS.includes(email) && password === TEST_PASSWORD) {
+        console.log("Test account login successful");
         toast.success("Login successful!");
         navigate('/sandbox');
         return;
       }
       
-      // If not found in sandbox_users, try regular auth
+      // Regular Supabase authentication for real accounts
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
+        console.error("Login error:", error);
         setErrorMsg(error.message);
         toast.error(error.message || "Invalid credentials");
       } else if (data.user) {
