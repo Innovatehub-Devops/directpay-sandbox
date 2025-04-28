@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,19 @@ export function SandboxAuth() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+  
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        console.log("User already authenticated, redirecting to sandbox");
+        navigate('/sandbox');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +41,15 @@ export function SandboxAuth() {
 
     try {
       // Special handling for test accounts
-      if (TEST_ACCOUNTS.includes(email) && password === TEST_PASSWORD) {
+      if (TEST_ACCOUNTS.includes(email.trim()) && password === TEST_PASSWORD) {
         console.log("Test account login successful");
         toast.success("Login successful!");
-        navigate('/sandbox');
+        
+        // Force navigation after a short delay to ensure the toast is visible
+        setTimeout(() => {
+          console.log("Navigating to /sandbox");
+          navigate('/sandbox', { replace: true });
+        }, 500);
         return;
       }
       
@@ -47,7 +65,12 @@ export function SandboxAuth() {
         toast.error(error.message || "Invalid credentials");
       } else if (data.user) {
         toast.success("Login successful!");
-        navigate('/sandbox');
+        
+        // Force navigation after a short delay
+        setTimeout(() => {
+          console.log("Navigating to /sandbox after Supabase auth");
+          navigate('/sandbox', { replace: true });
+        }, 500);
       }
     } catch (error: any) {
       console.error("Login error:", error);
