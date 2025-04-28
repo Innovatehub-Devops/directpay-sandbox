@@ -23,6 +23,21 @@ export function SandboxAuth() {
     setErrorMsg("");
 
     try {
+      // First try the sandbox_users table for predefined test accounts
+      const { data: sandboxUsers, error: sandboxError } = await supabase
+        .from('sandbox_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      
+      if (sandboxUsers && password === 'directpay123') {
+        // For test accounts, we accept the hardcoded password
+        toast.success("Login successful!");
+        navigate('/sandbox');
+        return;
+      }
+      
+      // If not found in sandbox_users, try regular auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
