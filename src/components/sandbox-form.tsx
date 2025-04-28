@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,11 @@ interface ApiResponse {
   timestamp: string;
 }
 
-export function SandboxForm() {
+interface SandboxFormProps {
+  apiBaseUrl: string;
+}
+
+export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
   const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -34,30 +37,71 @@ export function SandboxForm() {
   const [showPaymentSimulator, setShowPaymentSimulator] = useState(false);
   const [paymentId, setPaymentId] = useState("");
 
-  const handleGetCSRFToken = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const mockResponse = {
-        data: {
-          csrf_token: "csrf-abc123def456ghi789",
-          expires_at: new Date(Date.now() + 3600000).toISOString()
+  const callApi = async (endpoint: string, method: string, body?: any, headers?: any) => {
+    try {
+      const apiUrl = window.location.hostname.includes("localhost") 
+        ? `${window.location.protocol}//${window.location.hostname}:54321/functions/v1/sandbox-api${endpoint}`
+        : `${apiBaseUrl}${endpoint}`;
+
+      console.log(`Calling API: ${method} ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
         },
-        status: 200,
-        endpoint: "/api/v1/auth/csrf",
-        method: "GET",
+        body: body ? JSON.stringify(body) : undefined
+      });
+
+      const data = await response.json();
+      
+      return {
+        data,
+        status: response.status,
+        endpoint,
+        method,
         timestamp: new Date().toISOString()
       };
+    } catch (error) {
+      console.error("API call failed:", error);
+      toast.error("API call failed. See console for details.");
       
-      setResponse(mockResponse);
-      setCsrfToken(mockResponse.data.csrf_token);
-      setHistory([mockResponse, ...history]);
-      setIsLoading(false);
-      toast.success("CSRF token retrieved successfully");
-      setActiveTab("step2");
-    }, 800);
+      return {
+        data: { error: error.message },
+        status: 500,
+        endpoint,
+        method,
+        timestamp: new Date().toISOString()
+      };
+    }
   };
 
-  const handleLogin = () => {
+  const handleGetCSRFToken = async () => {
+    setIsLoading(true);
+    
+    try {
+      const apiResponse = await callApi("/auth/csrf", "GET");
+      
+      setResponse(apiResponse);
+      setHistory([apiResponse, ...history]);
+      
+      if (apiResponse.status === 200 && apiResponse.data.csrf_token) {
+        setCsrfToken(apiResponse.data.csrf_token);
+        toast.success("CSRF token retrieved successfully");
+        setActiveTab("step2");
+      } else {
+        toast.error("Failed to get CSRF token");
+      }
+    } catch (error) {
+      console.error("Error getting CSRF token:", error);
+      toast.error("Failed to get CSRF token");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
     if (!csrfToken) {
       toast.error("CSRF token is required");
       return;
@@ -69,32 +113,32 @@ export function SandboxForm() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const mockResponse = {
-        data: {
-          session_token: "jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-          expires_at: new Date(Date.now() + 86400000).toISOString(),
-          user: {
-            id: "usr_123456789",
-            username
-          }
-        },
-        status: 200,
-        endpoint: "/api/v1/auth/login",
-        method: "POST",
-        timestamp: new Date().toISOString()
-      };
+    
+    try {
+      const apiResponse = await callApi("/auth/login", "POST", 
+        { username, password },
+        { 'X-CSRF-Token': csrfToken }
+      );
       
-      setResponse(mockResponse);
-      setSessionToken(mockResponse.data.session_token);
-      setHistory([mockResponse, ...history]);
+      setResponse(apiResponse);
+      setHistory([apiResponse, ...history]);
+      
+      if (apiResponse.status === 200 && apiResponse.data.session_token) {
+        setSessionToken(apiResponse.data.session_token);
+        toast.success("Login successful");
+        setActiveTab("step3");
+      } else {
+        toast.error("Login failed: " + (apiResponse.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      toast.error("Login failed");
+    } finally {
       setIsLoading(false);
-      toast.success("Login successful");
-      setActiveTab("step3");
-    }, 1000);
+    }
   };
 
-  const handleCashIn = () => {
+  const handleCashIn = async () => {
     if (!sessionToken) {
       toast.error("Please log in first");
       return;
@@ -106,55 +150,55 @@ export function SandboxForm() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const newPaymentId = "pay_" + Math.random().toString(36).substr(2, 9);
-      setPaymentId(newPaymentId);
-      
-      const mockResponse = {
-        data: {
-          payment_id: newPaymentId,
-          checkout_url: `https://checkout.directpay.com/p/${newPaymentId}`,
-          status: "pending",
-          created_at: new Date().toISOString(),
-          amount: parseInt(amount),
+    
+    try {
+      const apiResponse = await callApi("/payments/cash-in", "POST", 
+        { 
+          amount: parseInt(amount), 
           currency: "PHP",
-          webhook_url: webhookUrl || null,
-          redirect_url: redirectUrl || null
+          webhook_url: webhookUrl || undefined,
+          redirect_url: redirectUrl || undefined
         },
-        status: 200,
-        endpoint: "/api/v1/payments/cash-in",
-        method: "POST",
-        timestamp: new Date().toISOString()
-      };
+        { 'Authorization': `Bearer ${sessionToken}` }
+      );
       
-      setResponse(mockResponse);
-      setHistory([mockResponse, ...history]);
+      setResponse(apiResponse);
+      setHistory([apiResponse, ...history]);
+      
+      if (apiResponse.status === 200 && apiResponse.data.payment_id) {
+        setPaymentId(apiResponse.data.payment_id);
+        toast.success("Cash-in request created successfully");
+      } else {
+        toast.error("Cash-in request failed: " + (apiResponse.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error creating cash-in request:", error);
+      toast.error("Cash-in request failed");
+    } finally {
       setIsLoading(false);
-      toast.success("Cash-in request created successfully");
-    }, 1200);
+    }
   };
 
-  const handlePaymentSuccess = () => {
-    const successResponse = {
-      data: {
-        payment_id: paymentId,
-        status: "completed",
-        amount: parseInt(amount),
-        currency: "PHP",
-        completed_at: new Date().toISOString()
-      },
-      status: 200,
-      endpoint: "/api/v1/payments/status",
-      method: "GET",
-      timestamp: new Date().toISOString()
-    };
-    
-    setResponse(successResponse);
-    setHistory([successResponse, ...history]);
-    toast.success("Payment completed successfully");
-
-    if (redirectUrl) {
-      window.open(redirectUrl, '_blank');
+  const handlePaymentSuccess = async () => {
+    try {
+      const apiResponse = await callApi(`/payments/status?payment_id=${paymentId}&amount=${amount}`, "GET", 
+        undefined,
+        { 'Authorization': `Bearer ${sessionToken}` }
+      );
+      
+      setResponse(apiResponse);
+      setHistory([apiResponse, ...history]);
+      
+      if (apiResponse.status === 200) {
+        toast.success("Payment completed successfully");
+        
+        if (redirectUrl) {
+          window.open(redirectUrl, '_blank');
+        }
+      }
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      toast.error("Failed to check payment status");
     }
   };
 

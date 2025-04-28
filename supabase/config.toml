@@ -77,3 +77,6 @@ url = ""
 verify_jwt = false
 [functions.approve-sandbox-access]
 verify_jwt = false
+[functions.sandbox-api]
+verify_jwt = false
+

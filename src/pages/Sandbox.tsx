@@ -4,6 +4,9 @@ import { SandboxForm } from "@/components/sandbox-form";
 import { WebhookTester } from "@/components/webhook-tester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Define the API URL - this would be the real production URL
+const API_BASE_URL = "https://sandbox.direct-payph.com";
+
 const Sandbox = () => {
   return (
     <div className="container mx-auto p-4">
@@ -22,7 +25,7 @@ const Sandbox = () => {
           </TabsList>
           
           <TabsContent value="payment">
-            <SandboxForm />
+            <SandboxForm apiBaseUrl={API_BASE_URL} />
           </TabsContent>
           
           <TabsContent value="webhook">
