@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface PaymentSimulatorProps {
   isOpen: boolean;
@@ -154,10 +154,12 @@ export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorPr
       </div>
       
       <div className="flex flex-col items-center justify-center p-6">
-        <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-          <span className="text-3xl text-gray-500">P</span>
-        </div>
-        <div className="text-white text-2xl font-bold">PayPlus</div>
+        <img 
+          src="/lovable-uploads/5b7cfe2e-7e68-460e-80e5-4a2605e45fd6.png"
+          alt="GCash Logo"
+          className="w-20 h-20 mb-2"
+        />
+        <div className="text-white text-2xl font-bold">GCash</div>
       </div>
       
       <div className="flex-1 bg-gray-50 rounded-t-3xl p-4">
@@ -215,9 +217,14 @@ export function PaymentSimulator({ isOpen, onClose, amount }: PaymentSimulatorPr
         <Button 
           className="w-full bg-blue-200 hover:bg-blue-300 text-blue-600 py-6 rounded-full"
           onClick={() => {
-            setTimeout(() => {
-              onClose();
-            }, 500);
+            const img = new Image();
+            img.src = "/lovable-uploads/83c8e501-00a7-460d-8fa7-cb5ab1335842.png";
+            img.onload = () => {
+              toast.success("Payment successful!");
+              setTimeout(() => {
+                onClose();
+              }, 2000);
+            };
           }}
         >
           PAY PHP {parseInt(amount) / 100}.00

@@ -18,8 +18,13 @@ export function Navbar() {
     <nav className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
-          <NavLink to="/" className="flex items-center space-x-2">
-            <span className="inline-block font-bold text-xl">Direct Pay API</span>
+          <NavLink to="/" className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/a84d050a-d330-48ad-9c92-a8a2bd99dd53.png" 
+              alt="DirectPay Logo" 
+              className="h-8 w-8"
+            />
+            <span className="inline-block font-bold text-xl">DirectPay</span>
           </NavLink>
 
           <div className="hidden gap-6 md:flex">
