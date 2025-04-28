@@ -12,10 +12,18 @@ const corsHeaders = {
 // Handle CSRF tokens
 const csrfTokens = new Map();
 
+// Debug helper function to log requests
+function logRequest(req: Request, message = "") {
+  const url = new URL(req.url);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${url.pathname}${message ? " - " + message : ""}`);
+  console.log("  Headers:", Object.fromEntries(req.headers.entries()));
+}
+
 serve(async (req) => {
   try {
-    console.log("Received request:", req.url);
     const url = new URL(req.url);
+    
+    logRequest(req, "Request received");
     
     // Handle CORS preflight requests - this is critical for external requests
     if (req.method === "OPTIONS") {
@@ -30,7 +38,7 @@ serve(async (req) => {
     const path = url.pathname.replace("/sandbox-api", "");
     const endpoint = path.split("/").filter(Boolean);
     
-    console.log(`Received ${req.method} request to ${path}`);
+    console.log(`Processing ${req.method} request to ${path}`);
 
     // Handle different API endpoints
     if (endpoint[0] === "auth") {
@@ -226,8 +234,9 @@ serve(async (req) => {
     }
     
     // Handle unknown endpoints
+    console.log(`Endpoint not found: ${path}`);
     return new Response(
-      JSON.stringify({ error: "Endpoint not found" }),
+      JSON.stringify({ error: "Endpoint not found", path }),
       { 
         headers: { 
           "Content-Type": "application/json",
@@ -243,7 +252,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: "Internal server error", 
-        details: error.message 
+        details: error.message,
+        stack: error.stack 
       }),
       { 
         headers: { 

@@ -5,11 +5,12 @@ import { WebhookTester } from "@/components/webhook-tester";
 import { EndpointTester } from "@/components/endpoint-tester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Updated function to get the API base URL
+// Updated function to get the API base URL with better fallbacks
 const getApiBaseUrl = () => {
   // For local development
   if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -26,7 +27,9 @@ const Sandbox = () => {
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "error">("checking");
   const [apiBaseUrl, setApiBaseUrl] = useState(API_BASE_URL);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [corsError, setCorsError] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [publicApiUrl, setPublicApiUrl] = useState("");
   
   // Create proper API URL for external tools to access the API
@@ -39,10 +42,12 @@ const Sandbox = () => {
     try {
       setApiStatus("checking");
       setErrorMessage(null);
+      setCorsError(false);
+      setIsRetrying(true);
       
-      console.log(`Checking API connection at: ${API_BASE_URL}/auth/csrf`);
+      console.log(`Checking API connection at: ${apiBaseUrl}/auth/csrf`);
       
-      const response = await fetch(`${API_BASE_URL}/auth/csrf`, {
+      const response = await fetch(`${apiBaseUrl}/auth/csrf`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -53,11 +58,13 @@ const Sandbox = () => {
       });
       
       if (!response.ok) {
+        console.error(`HTTP error! Status: ${response.status}`);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
+        console.error("Non-JSON response:", contentType);
         throw new Error("API endpoint returned non-JSON response");
       }
       
@@ -65,18 +72,33 @@ const Sandbox = () => {
       
       if (data.csrf_token) {
         setApiStatus("connected");
-        setApiBaseUrl(API_BASE_URL);
+        setApiBaseUrl(apiBaseUrl);
         toast.success("Connected to sandbox API");
       } else {
+        console.error("Invalid response format:", data);
         throw new Error("Invalid API response format");
       }
     } catch (error) {
       console.error("API connection error:", error);
       setApiStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred");
+      
+      // Check if this might be a CORS error
+      if (error.message && (
+        error.message.includes("NetworkError") || 
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("CORS")
+      )) {
+        setCorsError(true);
+        setErrorMessage("CORS error: The API server is blocking requests from this origin. This is likely a server configuration issue.");
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred");
+      }
+      
       toast.error("Failed to connect to sandbox API");
+    } finally {
+      setIsRetrying(false);
     }
-  }, []);
+  }, [apiBaseUrl]);
   
   useEffect(() => {
     // Initial check
@@ -122,6 +144,11 @@ const Sandbox = () => {
                   </>
                 )}
               </CardTitle>
+              {apiStatus === "error" && (
+                <CardDescription className="text-red-500">
+                  Unable to connect to the API. See details below.
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {apiStatus === "connected" && (
@@ -156,19 +183,48 @@ const Sandbox = () => {
                 </div>
               )}
               
-              {apiStatus === "error" && errorMessage && (
+              {apiStatus === "error" && (
                 <div className="space-y-4">
-                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                    <p className="text-sm text-red-800">{errorMessage}</p>
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Connection Failed</AlertTitle>
+                    <AlertDescription>
+                      {errorMessage || "Could not connect to the API. Please check your network connection."}
+                    </AlertDescription>
+                  </Alert>
                   
                   <Button 
                     onClick={checkApiConnection}
                     variant="outline"
                     className="mt-2"
+                    disabled={isRetrying}
                   >
-                    Retry Connection
+                    {isRetrying ? (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                        Retrying...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Retry Connection
+                      </>
+                    )}
                   </Button>
+                  
+                  {corsError && (
+                    <div className="mt-2 p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                      <h3 className="text-sm font-medium mb-2">CORS Issue Detected</h3>
+                      <p className="text-sm mb-2">
+                        The API seems to be blocking requests from this origin due to CORS policy.
+                      </p>
+                      <ul className="text-sm list-disc pl-5 space-y-1">
+                        <li>Ensure CORS headers are properly configured on the server</li>
+                        <li>Check that the site URL is properly configured</li>
+                        <li>Verify that preflight (OPTIONS) requests are handled correctly</li>
+                      </ul>
+                    </div>
+                  )}
                   
                   <div className="mt-2 p-4 bg-muted/40 rounded-md">
                     <h3 className="text-sm font-medium mb-2">Troubleshooting</h3>
@@ -176,6 +232,7 @@ const Sandbox = () => {
                       <li>Check if Supabase functions are deployed</li>
                       <li>Ensure CORS is properly configured</li>
                       <li>Verify network connectivity</li>
+                      <li>Check browser console for detailed error messages</li>
                     </ul>
                   </div>
                 </div>

@@ -99,7 +99,22 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.2s ease-out',
 				'fade-out': 'fade-out 0.2s ease-out'
-			}
+			},
+			// Add perspective and transform utilities
+			transformOrigin: {
+				'center-right': 'center right',
+			},
+			rotate: {
+				'y-8': 'rotateY(8deg)',
+				'-y-8': 'rotateY(-8deg)',
+			},
+			perspective: {
+				'1000': 'perspective(1000px)',
+				'2000': 'perspective(2000px)',
+			},
+			transitionProperty: {
+				'transform': 'transform',
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

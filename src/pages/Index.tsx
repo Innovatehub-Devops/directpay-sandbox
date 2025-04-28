@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
 import { AdminDashboardLaptop } from "@/components/admin-dashboard-laptop";
@@ -6,9 +5,10 @@ import { MobileWalletPreview } from "@/components/mobile-wallet-preview";
 
 const Index = () => {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-64px)]">
-      {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 relative overflow-hidden">
+    <div className="flex flex-col">
+      {/* Hero Section - Fixed height and overflow issues */}
+      <section className="w-full py-16 md:py-24 lg:py-32 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 absolute inset-0 -z-10"></div>
         <div className="container px-4 md:px-6 relative z-10">
           <div className="grid gap-6 lg:grid-cols-[1fr,1.5fr] lg:gap-12 items-center">
             <div className="space-y-4">
@@ -31,21 +31,21 @@ const Index = () => {
                 </Button>
               </div>
             </div>
-            <div className="relative">
-              <div className="flex items-center justify-center perspective-[2000px] animate-fade-in [animation-delay:800ms]">
-                <div className="relative">
-                  <div className="transform hover:rotate-y-[-8deg] transition-transform duration-500">
+            <div className="relative lg:h-auto">
+              <div className="flex items-center justify-center lg:transform-none animate-fade-in [animation-delay:800ms]">
+                <div className="relative w-full">
+                  <div className="transform hover:-rotate-y-8 transition-transform duration-500">
                     <AdminDashboardLaptop />
                   </div>
-                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 transform hover:rotate-y-[8deg] hover:translate-x-4 transition-all duration-500">
+                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 transform hover:rotate-y-8 hover:translate-x-4 transition-all duration-500 max-w-[30%] lg:max-w-[40%]">
                     <MobileWalletPreview />
                   </div>
                 </div>
               </div>
               {/* Decorative elements with improved opacity and z-index */}
               <div className="absolute -z-10 pointer-events-none inset-0">
-                <div className="absolute right-1/2 bottom-1/2 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] opacity-40" />
-                <div className="absolute left-1/2 top-1/2 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] opacity-40" />
+                <div className="absolute right-1/2 bottom-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/20 rounded-full blur-[120px] opacity-40" />
+                <div className="absolute left-1/2 top-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-indigo-500/20 rounded-full blur-[120px] opacity-40" />
               </div>
             </div>
           </div>
