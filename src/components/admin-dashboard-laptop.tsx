@@ -18,7 +18,7 @@ export function AdminDashboardLaptop() {
       <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-[8px] h-[8px] bg-slate-700 rounded-full" />
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[120px] h-[8px] bg-slate-700 rounded-full" />
       <div className="h-full w-full bg-background overflow-hidden rounded-2xl p-6">
-        <div className="space-y-6 animate-fade-in [animation-delay:400ms]">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -40,14 +40,14 @@ export function AdminDashboardLaptop() {
                 <Wallet className="h-4 w-4 text-primary" />
                 <div className="text-sm font-medium">Success Rate</div>
               </div>
-              <div className="text-2xl font-bold text-primary animate-pulse">98.5%</div>
+              <div className="text-2xl font-bold text-primary">98.5%</div>
             </Card>
             <Card className="p-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-primary" />
                 <div className="text-sm font-medium">Volume (24h)</div>
               </div>
-              <div className="text-2xl font-bold text-primary">$1.2M</div>
+              <div className="text-2xl font-bold text-primary">₱58.2M</div>
             </Card>
             <Card className="p-4">
               <div className="flex items-center gap-2">
