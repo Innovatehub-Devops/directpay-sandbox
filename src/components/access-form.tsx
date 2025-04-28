@@ -41,6 +41,8 @@ export function AccessForm() {
         apiAccess
       };
       
+      console.log("Sending request to edge function...");
+      
       // Send request to the email function with proper error handling
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
@@ -55,14 +57,20 @@ export function AccessForm() {
         throw new Error(error.message || "Failed to send access request");
       }
       
-      toast.success("Your request has been submitted! You will receive an email once approved.");
+      console.log("Response from edge function:", data);
       
-      // Reset form
-      setName("");
-      setEmail("");
-      setCompany("");
-      setUseCase("");
-      setApiAccess("sandbox");
+      if (data?.success) {
+        toast.success("Your request has been submitted! You will receive an email once approved.");
+        
+        // Reset form
+        setName("");
+        setEmail("");
+        setCompany("");
+        setUseCase("");
+        setApiAccess("sandbox");
+      } else {
+        throw new Error("Request was not successful");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("There was an error submitting your request. Please try again later.");
