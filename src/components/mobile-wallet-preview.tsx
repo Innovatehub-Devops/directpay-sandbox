@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export function MobileWalletPreview() {
   return (
-    <div className="relative w-full max-w-[280px] aspect-[9/19.5] rounded-[40px] border-8 border-slate-800 bg-slate-800 shadow-xl">
+    <div className="relative w-full max-w-[280px] aspect-[9/19.5] rounded-[40px] border-8 border-slate-800 bg-slate-800 shadow-2xl">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-[24px] bg-slate-800 rounded-b-2xl" />
       <div className="h-full w-full bg-background overflow-hidden rounded-[32px] p-4">
         <div className="space-y-4 animate-fade-in [animation-delay:400ms]">

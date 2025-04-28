@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
-import { AdminDashboardPreview } from "@/components/admin-dashboard-preview";
+import { AdminDashboardLaptop } from "@/components/admin-dashboard-laptop";
 import { MobileWalletPreview } from "@/components/mobile-wallet-preview";
 
 const Index = () => {
@@ -31,12 +32,14 @@ const Index = () => {
               </div>
             </div>
             <div className="relative">
-              <div className="grid grid-cols-2 gap-6 perspective-[2000px] animate-fade-in [animation-delay:800ms]">
-                <div className="transform hover:rotate-y-[-12deg] transition-transform duration-500">
-                  <AdminDashboardPreview />
-                </div>
-                <div className="transform hover:rotate-y-[12deg] transition-transform duration-500 mt-12">
-                  <MobileWalletPreview />
+              <div className="flex items-center justify-center perspective-[2000px] animate-fade-in [animation-delay:800ms]">
+                <div className="relative">
+                  <div className="transform hover:rotate-y-[-8deg] transition-transform duration-500">
+                    <AdminDashboardLaptop />
+                  </div>
+                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 transform hover:rotate-y-[8deg] hover:translate-x-4 transition-all duration-500">
+                    <MobileWalletPreview />
+                  </div>
                 </div>
               </div>
               {/* Decorative elements */}
