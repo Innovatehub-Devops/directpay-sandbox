@@ -27,12 +27,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received request to send-email function");
     const { type, userData, approvalToken } = await req.json();
+    
+    console.log(`Processing email request of type: ${type}`);
+    console.log(`User data:`, JSON.stringify(userData));
 
     if (type === "request_approval") {
       // Send approval request email to admin
       const adminEmail = "admin@innovatehub.ph";
       const approvalUrl = `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/approve-sandbox-access?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
+      
+      console.log(`Sending approval request to: ${adminEmail}`);
+      console.log(`Approval URL: ${approvalUrl}`);
       
       const adminMailOptions = {
         from: `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
@@ -61,7 +68,13 @@ serve(async (req) => {
         `,
       };
 
-      await transporter.sendMail(adminMailOptions);
+      try {
+        const info = await transporter.sendMail(adminMailOptions);
+        console.log("Admin approval email sent successfully:", info.messageId);
+      } catch (emailError) {
+        console.error("Failed to send admin email:", emailError);
+        throw emailError;
+      }
       
       return new Response(
         JSON.stringify({ success: true, message: "Approval request sent" }),
@@ -74,8 +87,27 @@ serve(async (req) => {
     
     if (type === "approval_notification") {
       // Send approval notification to the user
-      const frontendUrl = req.headers.get("referer") || "https://directpay-sandbox-frontend.com";
+      // Extract the base URL from the referer or headers
+      let frontendUrl = req.headers.get("referer") || req.headers.get("origin");
+      
+      // If we can't get the URL from headers, use a fallback
+      if (!frontendUrl) {
+        console.log("No referer or origin found, using fallback URL");
+        frontendUrl = "https://directpay-sandbox-frontend.com";
+      } else {
+        // Extract just the origin part from the referer
+        try {
+          const url = new URL(frontendUrl);
+          frontendUrl = url.origin;
+          console.log("Using frontend URL from headers:", frontendUrl);
+        } catch (e) {
+          console.log("Invalid URL in referer, using as-is:", frontendUrl);
+        }
+      }
+      
       const loginUrl = `${frontendUrl}/sandbox/auth?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
+      console.log(`Sending approval notification to: ${userData.email}`);
+      console.log(`Login URL: ${loginUrl}`);
       
       const userMailOptions = {
         from: `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
@@ -113,7 +145,13 @@ serve(async (req) => {
         `,
       };
 
-      await transporter.sendMail(userMailOptions);
+      try {
+        const info = await transporter.sendMail(userMailOptions);
+        console.log("User notification email sent successfully:", info.messageId);
+      } catch (emailError) {
+        console.error("Failed to send user notification email:", emailError);
+        throw emailError;
+      }
       
       return new Response(
         JSON.stringify({ success: true, message: "Approval notification sent" }),

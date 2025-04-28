@@ -41,7 +41,7 @@ export function AccessForm() {
         apiAccess
       };
       
-      // Send request to the email function
+      // Send request to the email function with proper error handling
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
           type: 'request_approval',
@@ -51,7 +51,8 @@ export function AccessForm() {
       });
       
       if (error) {
-        throw new Error(error.message);
+        console.error("Error response from Edge Function:", error);
+        throw new Error(error.message || "Failed to send access request");
       }
       
       toast.success("Your request has been submitted! You will receive an email once approved.");
