@@ -9,7 +9,8 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Store CSRF tokens with longer expiration and make it simpler
+// Store CSRF tokens with longer expiration - we'll use a simple Map for this demo
+// In a real app, you'd use a database or Redis
 const csrfTokens = new Map();
 
 // Debug helper function to log requests
@@ -51,9 +52,9 @@ serve(async (req) => {
       if (endpoint[1] === "csrf" && req.method === "GET") {
         // Generate a new CSRF token
         const token = crypto.randomUUID();
-        const expiresAt = new Date(Date.now() + 3600000).toISOString();
+        const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour expiration
         
-        // Store token with simple validation
+        // Store token with simple validation - just store it in the Map
         csrfTokens.set(token, true);
         
         console.log("Generated CSRF token:", token);
@@ -74,77 +75,100 @@ serve(async (req) => {
       }
       
       if (endpoint[1] === "login" && req.method === "POST") {
-        // Get CSRF token from header
-        const csrfToken = req.headers.get("x-csrf-token");
-        console.log("Received login request with CSRF token:", csrfToken);
-        
-        // Simplified CSRF validation - just check if token exists in our store
-        if (!csrfToken || !csrfTokens.has(csrfToken)) {
-          console.log("CSRF validation failed. Token not found in store.");
-          return new Response(
-            JSON.stringify({ error: "Invalid or missing CSRF token" }),
-            { 
-              headers: { 
-                "Content-Type": "application/json",
-                ...corsHeaders
-              },
-              status: 401 
-            }
-          );
-        }
-        
-        // Parse request body
-        const body = await req.json();
-        const { username, password } = body;
-        
-        if (!username || !password) {
-          return new Response(
-            JSON.stringify({ error: "Username and password are required" }),
-            { 
-              headers: { 
-                "Content-Type": "application/json",
-                ...corsHeaders
-              }, 
-              status: 400 
-            }
-          );
-        }
-
-        // Check against static test credentials
-        if (username !== TEST_CREDENTIALS.username || password !== TEST_CREDENTIALS.password) {
-          return new Response(
-            JSON.stringify({ error: "Invalid credentials" }),
-            { 
-              headers: { 
-                "Content-Type": "application/json",
-                ...corsHeaders
-              }, 
-              status: 401 
-            }
-          );
-        }
-        
-        // Generate a session token
-        const sessionToken = `jwt-${crypto.randomUUID()}`;
-        const expiresAt = new Date(Date.now() + 86400000).toISOString();
-        
-        return new Response(
-          JSON.stringify({
-            session_token: sessionToken,
-            expires_at: expiresAt,
-            user: {
-              id: `usr_${crypto.randomUUID()}`,
-              username
-            }
-          }),
-          { 
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            }, 
-            status: 200 
+        try {
+          // Get CSRF token from header
+          const csrfToken = req.headers.get("x-csrf-token");
+          console.log("Received login request with CSRF token:", csrfToken);
+          
+          // Simplified CSRF validation - just check if token exists in our store
+          if (!csrfToken || !csrfTokens.has(csrfToken)) {
+            console.log("CSRF validation failed. Token not found in store.");
+            return new Response(
+              JSON.stringify({ error: "Invalid or missing CSRF token" }),
+              { 
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                },
+                status: 401 
+              }
+            );
           }
-        );
+          
+          // Parse request body
+          const body = await req.json();
+          console.log("Login request body:", body);
+          
+          const { username, password } = body;
+          
+          if (!username || !password) {
+            console.log("Missing username or password");
+            return new Response(
+              JSON.stringify({ error: "Username and password are required" }),
+              { 
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                }, 
+                status: 400 
+              }
+            );
+          }
+
+          // Check against static test credentials
+          console.log(`Authenticating user: ${username}`);
+          console.log(`Comparing with expected: ${TEST_CREDENTIALS.username}`);
+          
+          if (username !== TEST_CREDENTIALS.username || password !== TEST_CREDENTIALS.password) {
+            console.log("Authentication failed: Invalid credentials");
+            return new Response(
+              JSON.stringify({ error: "Invalid credentials" }),
+              { 
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                }, 
+                status: 401 
+              }
+            );
+          }
+          
+          // Generate a session token
+          const sessionToken = `jwt-${crypto.randomUUID()}`;
+          const expiresAt = new Date(Date.now() + 86400000).toISOString(); // 24 hours
+          
+          console.log("Authentication successful, generated session token");
+          
+          return new Response(
+            JSON.stringify({
+              session_token: sessionToken,
+              expires_at: expiresAt,
+              user: {
+                id: `usr_${crypto.randomUUID()}`,
+                username
+              }
+            }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              }, 
+              status: 200 
+            }
+          );
+        } catch (error) {
+          console.error("Error processing login request:", error);
+          return new Response(
+            JSON.stringify({ error: "Error processing login request", details: error.message }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              }, 
+              status: 500 
+            }
+          );
+        }
       }
     } else if (endpoint[0] === "payments") {
       if (endpoint[1] === "cash-in" && req.method === "POST") {
