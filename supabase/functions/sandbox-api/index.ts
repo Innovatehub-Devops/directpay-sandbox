@@ -12,8 +12,11 @@ const corsHeaders = {
 const csrfTokens = new Map();
 
 serve(async (req) => {
+  console.log("Received request:", req.url);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
@@ -52,6 +55,8 @@ serve(async (req) => {
       } else if (endpoint[1] === "login" && req.method === "POST") {
         // Validate CSRF token
         const csrfToken = req.headers.get("x-csrf-token");
+        console.log("Received login request with CSRF token:", csrfToken);
+        
         if (!csrfToken || !csrfTokens.has(csrfToken)) {
           return new Response(
             JSON.stringify({ error: "Invalid or missing CSRF token" }),

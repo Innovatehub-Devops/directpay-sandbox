@@ -26,14 +26,17 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
   const [body, setBody] = useState("");
   const [response, setResponse] = useState<any>(null);
   const [rawResponse, setRawResponse] = useState<string | null>(null);
+  const [responseHeaders, setResponseHeaders] = useState<Record<string, string> | null>(null);
   const [curlCommand, setCurlCommand] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestUrl, setRequestUrl] = useState<string | null>(null);
 
   const endpoint = AVAILABLE_ENDPOINTS.find(e => e.id === selectedEndpoint)!;
 
   const generateCurlCommand = () => {
-    let command = `curl -X ${endpoint.method} '${apiBaseUrl}${endpoint.path}'`;
+    const fullUrl = `${apiBaseUrl}${endpoint.path}`;
+    let command = `curl -X ${endpoint.method} '${fullUrl}'`;
     
     // Add headers if provided
     if (headers.trim()) {
@@ -61,12 +64,18 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
     }
     
     setCurlCommand(command);
+    setRequestUrl(fullUrl);
   };
 
   const executeRequest = async () => {
     setIsLoading(true);
     setError(null);
     setRawResponse(null);
+    setResponseHeaders(null);
+    setResponse(null);
+    
+    const fullUrl = `${apiBaseUrl}${endpoint.path}`;
+    console.log(`Executing request to ${fullUrl}`);
     
     try {
       const requestHeaders: Record<string, string> = {
@@ -79,6 +88,7 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
           Object.assign(requestHeaders, headerObj);
         } catch (error) {
           toast.error("Invalid JSON in headers");
+          setIsLoading(false);
           return;
         }
       }
@@ -89,45 +99,78 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
           requestBody = JSON.parse(body);
         } catch (error) {
           toast.error("Invalid JSON in body");
+          setIsLoading(false);
           return;
         }
       }
 
-      console.log(`Executing request to ${apiBaseUrl}${endpoint.path}`);
-      const response = await fetch(`${apiBaseUrl}${endpoint.path}`, {
+      setRequestUrl(fullUrl);
+      const fetchOptions: RequestInit = {
         method: endpoint.method,
         headers: requestHeaders,
         body: requestBody ? JSON.stringify(requestBody) : undefined
-      });
+      };
+      
+      console.log("Request options:", fetchOptions);
+      const response = await fetch(fullUrl, fetchOptions);
 
-      // Check content type to determine how to parse the response
+      // Collect response headers
+      const headersObj: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headersObj[key] = value;
+      });
+      setResponseHeaders(headersObj);
+      
+      // Try to get response as text first
+      const textResponse = await response.text();
+      setRawResponse(textResponse);
+
+      // Check content type and try to parse JSON if appropriate
       const contentType = response.headers.get("content-type");
       console.log("Response content type:", contentType);
+      console.log("Response status:", response.status);
+      console.log("Raw response:", textResponse.substring(0, 500));
       
-      if (contentType && contentType.includes("application/json")) {
-        const data = await response.json();
+      try {
+        if (contentType && contentType.includes("application/json") && textResponse.trim()) {
+          const jsonData = JSON.parse(textResponse);
+          setResponse({
+            status: response.status,
+            headers: headersObj,
+            body: jsonData
+          });
+          
+          if (response.ok) {
+            toast.success(`Request successful: ${response.status}`);
+          } else {
+            toast.warning(`Request returned status: ${response.status}`);
+          }
+        } else {
+          setResponse({
+            status: response.status,
+            headers: headersObj,
+            body: "Non-JSON response received. See raw response below."
+          });
+          
+          if (response.ok) {
+            toast.info(`Received non-JSON response (${response.status})`);
+          } else {
+            toast.warning(`Request failed: ${response.status}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing response:", error);
         setResponse({
           status: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: data
+          headers: headersObj,
+          body: "Error parsing response. See raw response and console for details."
         });
-        setRawResponse(null);
-      } else {
-        // Handle non-JSON responses (e.g., HTML, text)
-        const text = await response.text();
-        setRawResponse(text);
-        setResponse({
-          status: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: "Non-JSON response received. See raw response below."
-        });
+        toast.error("Failed to parse response");
       }
-      
-      toast.success("Request executed successfully");
     } catch (error) {
-      console.error("Request failed:", error);
+      console.error("Network error:", error);
       setError(error instanceof Error ? error.message : "Unknown error occurred");
-      toast.error("Request failed. See console for details.");
+      toast.error(`Network error: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +190,14 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
             <Label>Endpoint</Label>
             <Select 
               value={selectedEndpoint} 
-              onValueChange={setSelectedEndpoint}
+              onValueChange={(value) => {
+                setSelectedEndpoint(value);
+                setResponse(null);
+                setRawResponse(null);
+                setResponseHeaders(null);
+                setCurlCommand("");
+                setError(null);
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -185,14 +235,21 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
             </div>
           )}
 
-          <div className="flex space-x-2">
-            <Button onClick={generateCurlCommand}>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <Button onClick={generateCurlCommand} variant="outline">
               Generate cURL
             </Button>
             <Button onClick={executeRequest} disabled={isLoading}>
               {isLoading ? "Executing..." : "Execute Request"}
             </Button>
           </div>
+
+          {requestUrl && (
+            <div className="space-y-1 mt-2">
+              <Label className="text-xs text-muted-foreground">Request URL:</Label>
+              <code className="block bg-muted p-2 rounded text-xs break-all">{requestUrl}</code>
+            </div>
+          )}
 
           {curlCommand && (
             <div className="space-y-2">
@@ -215,13 +272,24 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
             </div>
           )}
 
+          {responseHeaders && (
+            <div className="space-y-2">
+              <Label>Response Headers</Label>
+              <CodeBlock
+                code={JSON.stringify(responseHeaders, null, 2)}
+                language="json"
+                title="Response Headers"
+              />
+            </div>
+          )}
+
           {response && (
             <div className="space-y-2">
               <Label>Response</Label>
               <CodeBlock
                 code={JSON.stringify(response, null, 2)}
                 language="json"
-                title="Response"
+                title={`Response (Status: ${response.status})`}
               />
             </div>
           )}
