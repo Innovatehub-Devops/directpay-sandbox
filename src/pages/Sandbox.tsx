@@ -8,25 +8,19 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const getLocalApiBaseUrl = () => {
-  const localHostname = window.location.hostname;
-  
-  if (window.location.hostname.includes("lovable") || window.location.hostname.includes("lov.tools")) {
-    return `/functions/v1/sandbox-api`;
+const getApiBaseUrl = () => {
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    return `${window.location.protocol}//${window.location.hostname}:54321/functions/v1/sandbox-api`;
   } 
-  else if (localHostname === "localhost" || localHostname === "127.0.0.1") {
-    return `${window.location.protocol}//${localHostname}:54321/functions/v1/sandbox-api`;
-  }
-  else {
-    return `/functions/v1/sandbox-api`;
-  }
+  // Use the full Supabase URL for preview and production
+  return `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/sandbox-api`;
 };
 
-const LOCAL_API_BASE_URL = getLocalApiBaseUrl();
+const API_BASE_URL = getApiBaseUrl();
 
 const Sandbox = () => {
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "error">("checking");
-  const [apiBaseUrl, setApiBaseUrl] = useState(LOCAL_API_BASE_URL);
+  const [apiBaseUrl, setApiBaseUrl] = useState(API_BASE_URL);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   useEffect(() => {
@@ -35,7 +29,7 @@ const Sandbox = () => {
         setApiStatus("checking");
         setErrorMessage(null);
         
-        const response = await fetch(`${LOCAL_API_BASE_URL}/auth/csrf`, {
+        const response = await fetch(`${API_BASE_URL}/auth/csrf`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -43,6 +37,10 @@ const Sandbox = () => {
             'Pragma': 'no-cache'
           }
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
@@ -53,7 +51,7 @@ const Sandbox = () => {
         
         if (data.csrf_token) {
           setApiStatus("connected");
-          setApiBaseUrl(LOCAL_API_BASE_URL);
+          setApiBaseUrl(API_BASE_URL);
           toast.success("Connected to sandbox API");
         } else {
           throw new Error("Invalid API response format");
@@ -61,7 +59,7 @@ const Sandbox = () => {
       } catch (error) {
         console.error("API connection error:", error);
         setApiStatus("error");
-        setErrorMessage(error.message);
+        setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred");
         toast.error("Failed to connect to sandbox API");
       }
     };
