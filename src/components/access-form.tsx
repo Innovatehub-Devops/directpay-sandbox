@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,10 +28,9 @@ export function AccessForm() {
     setIsSubmitting(true);
     
     try {
-      // Generate a simple approval token (in a real app, use a more secure method)
+      // Generate approval token
       const approvalToken = btoa(`${email}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
       
-      // User data to be sent
       const userData = {
         name,
         email,
@@ -41,9 +39,8 @@ export function AccessForm() {
         apiAccess
       };
       
-      console.log("Sending request to edge function...");
+      console.log("Sending access request...");
       
-      // Send request to the email function with proper error handling
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
           type: 'request_approval',
@@ -69,7 +66,7 @@ export function AccessForm() {
         setUseCase("");
         setApiAccess("sandbox");
       } else {
-        throw new Error("Request was not successful");
+        throw new Error("Request failed");
       }
     } catch (error) {
       console.error("Error submitting form:", error);

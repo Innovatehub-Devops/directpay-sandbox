@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as nodemailer from "npm:nodemailer@6.9.1";
 
@@ -6,22 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Create a Nodemailer transporter using a more reliable configuration
-// Using a test account from Ethereal for demo purposes
-async function createTestAccount() {
-  try {
-    // Generate a test account for development/testing
-    return await nodemailer.createTestAccount();
-  } catch (error) {
-    console.error("Failed to create test email account:", error);
-    // Fallback to previous credentials if creating test account fails
-    return {
-      user: Deno.env.get("SMTP_USERNAME"),
-      pass: Deno.env.get("SMTP_PASSWORD"),
-    };
-  }
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -38,54 +21,31 @@ serve(async (req) => {
     console.log(`Processing email request of type: ${type}`);
     console.log(`User data:`, JSON.stringify(userData));
 
-    // Create transporter for this request
-    let transporterConfig;
-    
-    // Try using the environment variables first
-    const smtpUser = Deno.env.get("SMTP_USERNAME");
-    const smtpPass = Deno.env.get("SMTP_PASSWORD");
-    
-    console.log("Setting up email transporter...");
+    // Create SMTP transporter
+    const transporterConfig = {
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: Deno.env.get("SMTP_USERNAME"),
+        pass: Deno.env.get("SMTP_PASSWORD"),
+      },
+    };
 
-    if (smtpUser && smtpPass) {
-      console.log("Using configured SMTP credentials");
-      transporterConfig = {
-        host: "smtp.gmail.com", // Using Gmail as it's more reliable
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      };
-    } else {
-      // If no environment variables, use ethereal for testing
-      console.log("No SMTP credentials found, using ethereal test account");
-      const testAccount = await createTestAccount();
-      transporterConfig = {
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      };
-    }
-
+    console.log("Setting up email transporter with Gmail SMTP...");
+    
     const transporter = nodemailer.createTransport(transporterConfig);
     
-    // Verify the connection configuration
+    // Verify SMTP connection
     try {
       await transporter.verify();
       console.log("SMTP connection verified successfully");
     } catch (verifyError) {
       console.error("SMTP connection verification failed:", verifyError);
-      // Continue anyway - we'll try to send the email
+      throw new Error("Failed to establish SMTP connection");
     }
 
     if (type === "request_approval") {
-      // For testing/development purposes - log instead of sending real email
       const adminEmail = "admin@innovatehub.ph";
       const approvalUrl = `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/approve-sandbox-access?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
       
@@ -124,24 +84,17 @@ serve(async (req) => {
         const info = await transporter.sendMail(adminMailOptions);
         console.log("Admin approval email sent successfully:", info);
         
-        if (transporterConfig.host === "smtp.ethereal.email") {
-          // If using ethereal, log the URL to view the test email
-          console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
-        }
+        return new Response(
+          JSON.stringify({ success: true, message: "Approval request sent successfully" }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       } catch (emailError) {
         console.error("Failed to send admin email:", emailError);
-        // For development/testing, we'll still mark this as a success
-        console.log("In production, this would be handled differently");
+        throw new Error(`Failed to send approval email: ${emailError.message}`);
       }
-      
-      // Always return success for testing purposes
-      return new Response(
-        JSON.stringify({ success: true, message: "Approval request sent" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
     }
     
     if (type === "approval_notification") {
@@ -237,16 +190,14 @@ serve(async (req) => {
   } catch (error) {
     console.error("Email sending error:", error);
     
-    // For development purposes, we return success anyway
     return new Response(
       JSON.stringify({ 
-        success: true,
-        message: "Email would be sent in production",
-        debug: error.message
+        success: false,
+        error: error.message || "Failed to send email"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Changed from 500 to 200 for testing
+        status: 500,
       }
     );
   }
