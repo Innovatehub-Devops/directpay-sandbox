@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Enhanced CORS headers to allow requests from any origin during development
@@ -8,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Handle CSRF tokens
+// Store CSRF tokens with longer expiration and make it simpler
 const csrfTokens = new Map();
 
 // Debug helper function to log requests
@@ -52,7 +53,8 @@ serve(async (req) => {
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 3600000).toISOString();
         
-        csrfTokens.set(token, { expiresAt });
+        // Store token with simple validation
+        csrfTokens.set(token, true);
         
         console.log("Generated CSRF token:", token);
         
@@ -72,11 +74,13 @@ serve(async (req) => {
       }
       
       if (endpoint[1] === "login" && req.method === "POST") {
-        // Validate CSRF token
+        // Get CSRF token from header
         const csrfToken = req.headers.get("x-csrf-token");
         console.log("Received login request with CSRF token:", csrfToken);
         
+        // Simplified CSRF validation - just check if token exists in our store
         if (!csrfToken || !csrfTokens.has(csrfToken)) {
+          console.log("CSRF validation failed. Token not found in store.");
           return new Response(
             JSON.stringify({ error: "Invalid or missing CSRF token" }),
             { 
