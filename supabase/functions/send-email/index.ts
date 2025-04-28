@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as nodemailer from "npm:nodemailer@6.9.1";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,48 +22,60 @@ serve(async (req) => {
     console.log(`Processing email request of type: ${type}`);
     console.log(`User data:`, JSON.stringify(userData));
 
-    // Create test SMTP service for development/testing
+    // Create Supabase client to fetch SMTP settings
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch SMTP configuration from database
+    const { data: smtpConfig, error: smtpError } = await supabaseClient
+      .from('smtp_config')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (smtpError || !smtpConfig) {
+      console.error("Failed to fetch SMTP config:", smtpError);
+      throw new Error("SMTP configuration not found");
+    }
+
+    // Create SMTP service
     let transporter;
     let testAccount;
     let isEthereal = false;
 
     try {
-      // First try using Gmail SMTP if credentials are available
-      if (Deno.env.get("SMTP_USERNAME") && Deno.env.get("SMTP_PASSWORD")) {
-        console.log("Attempting to use Gmail SMTP service");
-        transporter = nodemailer.createTransport({
-          host: "smtp.gmail.com",
-          port: 587,
-          secure: false,
-          auth: {
-            user: Deno.env.get("SMTP_USERNAME"),
-            pass: Deno.env.get("SMTP_PASSWORD"),
-          },
-        });
-      } else {
-        // Fallback to Ethereal for testing
-        console.log("Gmail credentials not found, using Ethereal test account");
-        testAccount = await nodemailer.createTestAccount();
-        isEthereal = true;
-        
-        transporter = nodemailer.createTransport({
-          host: "smtp.ethereal.email",
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
-        });
-      }
-      
+      console.log("Attempting to use configured SMTP service");
+      transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.port === 465,
+        auth: {
+          user: smtpConfig.username,
+          pass: smtpConfig.password,
+        },
+      });
+
       // Verify SMTP connection
       await transporter.verify();
       console.log("SMTP connection verified");
       
-    } catch (smtpError) {
-      console.error("Failed to set up SMTP:", smtpError);
-      throw new Error(`SMTP setup failed: ${smtpError.message}`);
+    } catch (smtpSetupError) {
+      console.error("Failed to set up configured SMTP, falling back to Ethereal:", smtpSetupError);
+      // Fallback to Ethereal for testing
+      testAccount = await nodemailer.createTestAccount();
+      isEthereal = true;
+      
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
     }
 
     // Process registration notifications
@@ -115,7 +128,7 @@ serve(async (req) => {
       }
     }
 
-    // Keep existing email sending functionality for other types
+    // Process approval requests
     if (type === "request_approval") {
       const adminEmail = "admin@innovatehub.ph";
       const approvalUrl = `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/approve-sandbox-access?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
@@ -177,6 +190,7 @@ serve(async (req) => {
       }
     }
     
+    // Process approval notifications
     if (type === "approval_notification") {
       // Extract the base URL from the referer or headers
       let frontendUrl = req.headers.get("referer") || req.headers.get("origin");
