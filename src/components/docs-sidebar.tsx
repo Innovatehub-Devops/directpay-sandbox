@@ -30,19 +30,19 @@ export function DocsSidebar() {
   }, {} as Record<string, ApiEndpoint[]>);
 
   return (
-    <aside className="w-64 border-r px-4 py-6 hidden md:block">
-      <h2 className="font-semibold text-lg mb-4">API Reference</h2>
+    <aside className="w-full md:w-64 md:border-r px-2 md:px-4 py-4">
+      <h2 className="font-semibold text-lg mb-4 px-2">API Reference</h2>
       <div className="space-y-6">
         {Object.entries(groupedEndpoints).map(([category, endpoints]) => (
-          <div key={category}>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">{category}</h3>
+          <div key={category} className="pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 px-2">{category}</h3>
             <ul className="space-y-1">
               {endpoints.map((endpoint) => (
                 <li key={endpoint.id}>
                   <NavLink
                     to={`/docs/${endpoint.id}`}
                     className={({ isActive }) =>
-                      `text-sm block px-2 py-1 rounded-md ${
+                      `text-sm block px-3 py-2 rounded-md ${
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-accent"
