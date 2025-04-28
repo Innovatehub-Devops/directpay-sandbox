@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-// Enhanced CORS headers to allow requests from any origin
+// Enhanced CORS headers to allow requests from any origin during development
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token, origin, accept",
