@@ -61,7 +61,7 @@ export function SandboxAuth() {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + "/auth/confirm"
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
         }
       });
 
@@ -70,11 +70,9 @@ export function SandboxAuth() {
         toast.error(error.message || "Registration failed");
       } else if (data.user) {
         if (data.session) {
-          // User is immediately signed in (no email confirmation required)
           toast.success("Registration successful!");
           navigate('/sandbox');
         } else {
-          // Email confirmation required
           toast.success("Registration successful! Please check your email for confirmation.");
         }
       }
@@ -90,11 +88,11 @@ export function SandboxAuth() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>{isRegistering ? "Register for Sandbox" : "Sandbox Login"}</CardTitle>
+        <CardTitle>{isRegistering ? "Register for DirectPay API Sandbox" : "DirectPay API Sandbox Login"}</CardTitle>
         <CardDescription>
           {isRegistering 
-            ? "Create an account to access the DirectPay API sandbox environment."
-            : "Use your credentials to access the API sandbox environment."
+            ? "Create an account to access the DirectPay API sandbox environment for testing and development."
+            : "Use your credentials to access the DirectPay API sandbox environment."
           }
         </CardDescription>
       </CardHeader>
