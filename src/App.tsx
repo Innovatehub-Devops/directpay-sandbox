@@ -11,6 +11,7 @@ import Sandbox from "./pages/Sandbox";
 import SandboxAuth from "./pages/SandboxAuth";
 import GetAccess from "./pages/GetAccess";
 import NotFound from "./pages/NotFound";
+import AuthConfirm from "./pages/AuthConfirm";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/sandbox" element={<Sandbox />} />
             <Route path="/sandbox/auth" element={<SandboxAuth />} />
             <Route path="/access" element={<GetAccess />} />
+            <Route path="/auth/confirm" element={<AuthConfirm />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
