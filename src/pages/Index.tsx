@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
 import { AdminDashboardPreview } from "@/components/admin-dashboard-preview";
+import { MobileWalletPreview } from "@/components/mobile-wallet-preview";
 
 const Index = () => {
   return (
@@ -8,7 +9,7 @@ const Index = () => {
       {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 overflow-hidden">
         <div className="container px-4 md:px-6">
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
+          <div className="grid gap-6 lg:grid-cols-[1fr,1.5fr] lg:gap-12 items-center">
             <div className="space-y-4">
               <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary animate-fade-in">
                 Developer API
@@ -29,9 +30,19 @@ const Index = () => {
                 </Button>
               </div>
             </div>
-            <div className="mx-auto lg:ml-auto perspective-[2000px] animate-fade-in [animation-delay:800ms]">
-              <div className="transform hover:rotate-y-[-12deg] transition-transform duration-500">
-                <AdminDashboardPreview />
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-6 perspective-[2000px] animate-fade-in [animation-delay:800ms]">
+                <div className="transform hover:rotate-y-[-12deg] transition-transform duration-500">
+                  <AdminDashboardPreview />
+                </div>
+                <div className="transform hover:rotate-y-[12deg] transition-transform duration-500 mt-12">
+                  <MobileWalletPreview />
+                </div>
+              </div>
+              {/* Decorative elements */}
+              <div className="absolute -z-10 pointer-events-none inset-0">
+                <div className="absolute right-1/2 bottom-1/2 w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[120px] opacity-50" />
+                <div className="absolute left-1/2 top-1/2 w-[500px] h-[500px] bg-indigo-500/30 rounded-full blur-[120px] opacity-50" />
               </div>
             </div>
           </div>
