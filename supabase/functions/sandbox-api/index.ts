@@ -9,36 +9,91 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Time-based CSRF token validation
-interface CSRFToken {
-  token: string;
+// Stateless CSRF token implementation
+interface CSRFPayload {
+  issued: number;
   expires: number;
 }
 
-// Generate a CSRF token with 1-hour expiration
-function generateCSRFToken(): CSRFToken {
-  return {
-    token: crypto.randomUUID(),
+// A simple secret for HMAC signing
+// In a real app, this should be an environment variable
+const SECRET_KEY = new TextEncoder().encode("sandbox-api-csrf-secret");
+
+// Generate a CSRF token that's self-contained and doesn't need server-side storage
+async function generateCSRFToken(): Promise<string> {
+  const payload: CSRFPayload = {
+    issued: Date.now(),
     expires: Date.now() + 3600000 // 1 hour expiration
   };
+  
+  // Convert payload to string
+  const payloadStr = JSON.stringify(payload);
+  
+  // Create a random token ID
+  const tokenId = crypto.randomUUID();
+  
+  // Create HMAC signature
+  const key = await crypto.subtle.importKey(
+    "raw", SECRET_KEY, { name: "HMAC", hash: "SHA-256" }, 
+    false, ["sign"]
+  );
+  
+  const encodedPayload = new TextEncoder().encode(`${tokenId}.${payloadStr}`);
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, encodedPayload)
+  );
+  
+  // Convert signature to base64
+  const signatureBase64 = btoa(String.fromCharCode(...signature));
+  
+  // Final token format: tokenId.payload.signature
+  return `${tokenId}.${btoa(payloadStr)}.${signatureBase64}`;
 }
 
-// Validate a CSRF token
-function validateCSRFToken(token: string, tokens: Map<string, number>): boolean {
-  const expiry = tokens.get(token);
-  if (!expiry) return false;
-  
-  // Check if token has expired
-  if (Date.now() > expiry) {
-    tokens.delete(token); // Clean up expired token
+// Validate a CSRF token without needing server-side storage
+async function validateCSRFToken(token: string): Promise<boolean> {
+  try {
+    // Split the token into parts
+    const [tokenId, encodedPayload, signature] = token.split('.');
+    
+    if (!tokenId || !encodedPayload || !signature) {
+      console.log("Invalid token format");
+      return false;
+    }
+    
+    // Verify signature
+    const key = await crypto.subtle.importKey(
+      "raw", SECRET_KEY, { name: "HMAC", hash: "SHA-256" }, 
+      false, ["verify"]
+    );
+    
+    const signatureBytes = Uint8Array.from(
+      atob(signature), c => c.charCodeAt(0)
+    );
+    
+    const dataToVerify = new TextEncoder().encode(`${tokenId}.${encodedPayload}`);
+    const isValid = await crypto.subtle.verify(
+      "HMAC", key, signatureBytes, dataToVerify
+    );
+    
+    if (!isValid) {
+      console.log("Invalid signature");
+      return false;
+    }
+    
+    // Check expiration
+    const payload = JSON.parse(atob(encodedPayload)) as CSRFPayload;
+    if (Date.now() > payload.expires) {
+      console.log("Token expired");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error validating token:", error);
     return false;
   }
-  
-  return true;
 }
-
-// Store tokens with their expiration times
-const csrfTokens = new Map<string, number>();
 
 // Static test credentials
 const TEST_CREDENTIALS = {
@@ -98,26 +153,31 @@ serve(async (req) => {
     // Handle different API endpoints
     if (endpoint[0] === "auth") {
       if (endpoint[1] === "csrf" && req.method === "GET") {
-        // Generate new CSRF token with expiration
-        const csrfData = generateCSRFToken();
-        console.log("Generated CSRF token:", csrfData.token);
+        // Generate stateless CSRF token
+        const token = await generateCSRFToken();
+        console.log("Generated stateless CSRF token");
         
-        // Store token with expiration
-        csrfTokens.set(csrfData.token, csrfData.expires);
-        
-        return new Response(
-          JSON.stringify({
-            csrf_token: csrfData.token,
-            expires_at: new Date(csrfData.expires).toISOString()
-          }),
-          { 
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            },
-            status: 200 
-          }
-        );
+        // Extract expiration from the token for response
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1])) as CSRFPayload;
+          
+          return new Response(
+            JSON.stringify({
+              csrf_token: token,
+              expires_at: new Date(payload.expires).toISOString()
+            }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              },
+              status: 200 
+            }
+          );
+        } else {
+          throw new Error("Failed to generate valid token");
+        }
       }
       
       if (endpoint[1] === "login" && req.method === "POST") {
@@ -125,11 +185,30 @@ serve(async (req) => {
           const body = await req.json();
           console.log("Login request body:", body);
           
-          // Get and validate CSRF token
+          // Get and validate CSRF token using the stateless approach
           const csrfToken = req.headers.get("x-csrf-token");
           console.log("Received CSRF token:", csrfToken);
           
-          if (!csrfToken || !validateCSRFToken(csrfToken, csrfTokens)) {
+          if (!csrfToken) {
+            console.log("CSRF validation failed - No token provided");
+            return new Response(
+              JSON.stringify({ 
+                error: "Missing CSRF token",
+                details: "Please obtain a CSRF token and include it in the X-CSRF-Token header" 
+              }),
+              { 
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                },
+                status: 401 
+              }
+            );
+          }
+          
+          // Validate the token
+          const isValidToken = await validateCSRFToken(csrfToken);
+          if (!isValidToken) {
             console.log("CSRF validation failed - Token invalid or expired");
             return new Response(
               JSON.stringify({ 
@@ -354,4 +433,3 @@ serve(async (req) => {
     );
   }
 });
-
