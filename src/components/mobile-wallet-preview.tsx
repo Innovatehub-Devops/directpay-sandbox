@@ -35,6 +35,15 @@ export function MobileWalletPreview() {
               </div>
             </Card>
           </div>
+          <Card className="p-3 bg-blue-500 text-white hover:bg-blue-600 transition-colors cursor-pointer">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-xs font-medium">GCash</div>
+                <div className="text-sm font-bold mt-0.5">Add Money</div>
+              </div>
+              <div className="text-2xl font-bold">G</div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

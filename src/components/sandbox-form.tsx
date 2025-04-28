@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeBlock } from "./code-block";
-import { Clipboard } from "lucide-react";
+import { Clipboard, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { PaymentSimulator } from "./payment-simulator";
 
 interface ApiResponse {
   data: any;
@@ -29,6 +30,8 @@ export function SandboxForm() {
   const [history, setHistory] = useState<ApiResponse[]>([]);
   const [activeTab, setActiveTab] = useState("step1");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPaymentSimulator, setShowPaymentSimulator] = useState(false);
+  const [paymentId, setPaymentId] = useState("");
 
   const handleGetCSRFToken = () => {
     setIsLoading(true);
@@ -95,14 +98,17 @@ export function SandboxForm() {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
+      const newPaymentId = "pay_" + Math.random().toString(36).substr(2, 9);
+      setPaymentId(newPaymentId);
+      
       const mockResponse = {
         data: {
-          payment_id: "pay_abc123def456",
-          checkout_url: "https://checkout.directpay.com/p/abc123def456",
+          payment_id: newPaymentId,
+          checkout_url: `https://checkout.directpay.com/p/${newPaymentId}`,
           status: "pending",
           created_at: new Date().toISOString(),
           amount: parseInt(amount),
-          currency: "USD"
+          currency: "PHP"
         },
         status: 200,
         endpoint: "/api/v1/payments/cash-in",
@@ -283,9 +289,19 @@ export function SandboxForm() {
                   {response.method} {response.endpoint} - {new Date(response.timestamp).toLocaleTimeString()}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={copyResponse}>
-                <Clipboard className="h-4 w-4 mr-2" /> Copy JSON
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={copyResponse}>
+                  <Clipboard className="h-4 w-4 mr-2" /> Copy JSON
+                </Button>
+                {response.endpoint === "/api/v1/payments/cash-in" && (
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowPaymentSimulator(true)}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" /> Open Payment Link
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <CodeBlock 
@@ -293,6 +309,27 @@ export function SandboxForm() {
                 language="json" 
               />
             </CardContent>
+            {response.endpoint === "/api/v1/payments/cash-in" && (
+              <CardFooter className="bg-muted/50 border-t flex flex-col items-start px-6 py-4">
+                <div className="flex items-center">
+                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                  <p className="text-sm text-muted-foreground">Payment link generated successfully</p>
+                </div>
+                <p className="text-sm mt-2">
+                  <span className="font-medium">Payment URL:</span>{" "}
+                  <a 
+                    href="#" 
+                    className="text-blue-600 hover:underline font-mono text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowPaymentSimulator(true);
+                    }}
+                  >
+                    https://checkout.directpay.com/p/{paymentId}
+                  </a>
+                </p>
+              </CardFooter>
+            )}
           </Card>
         )}
       </div>
@@ -334,6 +371,12 @@ export function SandboxForm() {
           </CardContent>
         </Card>
       </div>
+
+      <PaymentSimulator 
+        isOpen={showPaymentSimulator} 
+        onClose={() => setShowPaymentSimulator(false)}
+        amount={amount}
+      />
     </div>
   );
 }
