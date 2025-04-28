@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +20,8 @@ interface ApiResponse {
 
 export function SandboxForm() {
   const [csrfToken, setCsrfToken] = useState("");
-  const [username, setUsername] = useState("testuser@example.com");
-  const [password, setPassword] = useState("password123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [amount, setAmount] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [redirectUrl, setRedirectUrl] = useState("");
@@ -34,7 +35,6 @@ export function SandboxForm() {
 
   const handleGetCSRFToken = () => {
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       const mockResponse = {
         data: {
@@ -52,6 +52,7 @@ export function SandboxForm() {
       setHistory([mockResponse, ...history]);
       setIsLoading(false);
       toast.success("CSRF token retrieved successfully");
+      setActiveTab("step2");
     }, 800);
   };
 
@@ -61,8 +62,12 @@ export function SandboxForm() {
       return;
     }
 
+    if (!username || !password) {
+      toast.error("Username and password are required");
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       const mockResponse = {
         data: {
@@ -70,7 +75,7 @@ export function SandboxForm() {
           expires_at: new Date(Date.now() + 86400000).toISOString(),
           user: {
             id: "usr_123456789",
-            username: username
+            username
           }
         },
         status: 200,
@@ -89,13 +94,17 @@ export function SandboxForm() {
   };
 
   const handleCashIn = () => {
+    if (!sessionToken) {
+      toast.error("Please log in first");
+      return;
+    }
+
     if (!amount) {
       toast.error("Amount is required");
       return;
     }
 
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       const newPaymentId = "pay_" + Math.random().toString(36).substr(2, 9);
       setPaymentId(newPaymentId);
@@ -124,17 +133,6 @@ export function SandboxForm() {
     }, 1200);
   };
 
-  const copyResponse = () => {
-    if (response) {
-      navigator.clipboard.writeText(JSON.stringify(response.data, null, 2));
-      toast.success("Response copied to clipboard");
-    }
-  };
-
-  const viewHistoryItem = (item: ApiResponse) => {
-    setResponse(item);
-  };
-
   const handlePaymentSuccess = () => {
     const successResponse = {
       data: {
@@ -153,10 +151,28 @@ export function SandboxForm() {
     setResponse(successResponse);
     setHistory([successResponse, ...history]);
     toast.success("Payment completed successfully");
+
+    if (redirectUrl) {
+      window.open(redirectUrl, '_blank');
+    }
   };
 
-  const getCurlExample = () => {
-    return `curl -X POST \\
+  const getCurlExample = (step: string) => {
+    switch(step) {
+      case 'step1':
+        return `curl -X GET \\
+  'https://api.directpay.com/v1/auth/csrf'`;
+      case 'step2':
+        return `curl -X POST \\
+  'https://api.directpay.com/v1/auth/login' \\
+  -H 'Content-Type: application/json' \\
+  -H 'X-CSRF-Token: ${csrfToken || 'YOUR_CSRF_TOKEN'}' \\
+  -d '{
+    "username": "${username || 'your.email@example.com'}",
+    "password": "${password || 'your_password'}"
+  }'`;
+      default:
+        return `curl -X POST \\
   'https://api.directpay.com/v1/payments/cash-in' \\
   -H 'Content-Type: application/json' \\
   -H 'Authorization: Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}' \\
@@ -166,6 +182,7 @@ export function SandboxForm() {
     "webhook_url": "${webhookUrl || "https://your-webhook-url.com"}",
     "redirect_url": "${redirectUrl || "https://your-success-url.com"}"
   }'`;
+    }
   };
 
   return (
@@ -175,16 +192,85 @@ export function SandboxForm() {
           <CardHeader>
             <CardTitle>API Sandbox</CardTitle>
             <CardDescription>
-              Test Direct Pay API endpoints with this interactive sandbox.
+              Test DirectPay API endpoints in this interactive sandbox.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-1">
-                <TabsTrigger value="step1">Cash In</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="step1">1. Get CSRF Token</TabsTrigger>
+                <TabsTrigger value="step2">2. Login</TabsTrigger>
+                <TabsTrigger value="step3">3. Cash In</TabsTrigger>
               </TabsList>
               
               <TabsContent value="step1" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    First, obtain a CSRF token to secure your session.
+                  </p>
+                  
+                  <Button 
+                    onClick={handleGetCSRFToken} 
+                    disabled={isLoading} 
+                    className="w-full"
+                  >
+                    {isLoading ? "Retrieving..." : "Get CSRF Token"}
+                  </Button>
+
+                  <div className="mt-6">
+                    <Label>CURL Example</Label>
+                    <CodeBlock
+                      code={getCurlExample('step1')}
+                      language="bash"
+                      title="Get CSRF Token"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="step2" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="username">Email</Label>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={handleLogin} 
+                    disabled={isLoading || !csrfToken} 
+                    className="w-full"
+                  >
+                    {isLoading ? "Logging in..." : "Login"}
+                  </Button>
+
+                  <div className="mt-6">
+                    <Label>CURL Example</Label>
+                    <CodeBlock
+                      code={getCurlExample('step2')}
+                      language="bash"
+                      title="Login Request"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="step3" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="amount">Amount (in cents)</Label>
@@ -222,7 +308,7 @@ export function SandboxForm() {
                   
                   <Button 
                     onClick={handleCashIn} 
-                    disabled={isLoading} 
+                    disabled={isLoading || !sessionToken} 
                     className="w-full"
                   >
                     {isLoading ? "Processing..." : "Create Cash-In Request"}
@@ -231,9 +317,9 @@ export function SandboxForm() {
                   <div className="mt-6">
                     <Label>CURL Example</Label>
                     <CodeBlock
-                      code={getCurlExample()}
+                      code={getCurlExample('step3')}
                       language="bash"
-                      title="API Request Example"
+                      title="Cash-In Request"
                     />
                   </div>
                 </div>
@@ -319,7 +405,9 @@ export function SandboxForm() {
                 {history.map((item, index) => (
                   <div
                     key={index}
-                    onClick={() => viewHistoryItem(item)}
+                    onClick={() => {
+                      setResponse(item);
+                    }}
                     className="flex items-center justify-between p-3 border rounded-md cursor-pointer hover:bg-accent"
                   >
                     <div>
