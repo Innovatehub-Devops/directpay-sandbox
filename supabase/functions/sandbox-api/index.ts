@@ -1,32 +1,37 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
+// Enhanced CORS headers to allow requests from any origin
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token, origin, accept",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 // Handle CSRF tokens
 const csrfTokens = new Map();
 
 serve(async (req) => {
-  console.log("Received request:", req.url);
-  
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    console.log("Handling OPTIONS request");
-    return new Response(null, { headers: corsHeaders, status: 204 });
-  }
-
-  // Get the API endpoint path from the URL
-  const url = new URL(req.url);
-  const path = url.pathname.replace("/sandbox-api", "");
-  const endpoint = path.split("/").filter(Boolean);
-  
-  console.log(`Received ${req.method} request to ${path}`);
-  
   try {
+    console.log("Received request:", req.url);
+    const url = new URL(req.url);
+    
+    // Handle CORS preflight requests - this is critical for external requests
+    if (req.method === "OPTIONS") {
+      console.log("Handling OPTIONS request for CORS preflight");
+      return new Response(null, { 
+        headers: corsHeaders, 
+        status: 204 
+      });
+    }
+
+    // Get the API endpoint path from the URL
+    const path = url.pathname.replace("/sandbox-api", "");
+    const endpoint = path.split("/").filter(Boolean);
+    
+    console.log(`Received ${req.method} request to ${path}`);
+
     // Handle different API endpoints
     if (endpoint[0] === "auth") {
       if (endpoint[1] === "csrf" && req.method === "GET") {
