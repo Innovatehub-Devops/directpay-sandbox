@@ -88,11 +88,11 @@ export function SandboxAuth() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>{isRegistering ? "Register for DirectPay API Sandbox" : "DirectPay API Sandbox Login"}</CardTitle>
+        <CardTitle>{isRegistering ? "Developer Account Registration" : "Developer Account Login"}</CardTitle>
         <CardDescription>
           {isRegistering 
-            ? "Create an account to access the DirectPay API sandbox environment for testing and development."
-            : "Use your credentials to access the DirectPay API sandbox environment."
+            ? "Create your developer account to access the official DirectPay API sandbox environment for integration and testing."
+            : "Access the DirectPay API sandbox environment with your developer credentials."
           }
         </CardDescription>
       </CardHeader>
@@ -106,16 +106,17 @@ export function SandboxAuth() {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Developer Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@example.com"
+              placeholder="developer@company.com"
               required
             />
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -130,10 +131,11 @@ export function SandboxAuth() {
               <p className="text-xs text-muted-foreground">Password must be at least 6 characters</p>
             )}
           </div>
+          
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading 
-              ? (isRegistering ? "Registering..." : "Logging in...") 
-              : (isRegistering ? "Register" : "Login")
+              ? (isRegistering ? "Creating Account..." : "Authenticating...") 
+              : (isRegistering ? "Create Developer Account" : "Access Sandbox")
             }
           </Button>
           
@@ -147,8 +149,8 @@ export function SandboxAuth() {
               className="text-sm text-blue-600 hover:underline"
             >
               {isRegistering 
-                ? "Already have an account? Login" 
-                : "Need an account? Register here"
+                ? "Already have a developer account? Login" 
+                : "Need a developer account? Register here"
               }
             </button>
           </div>
