@@ -222,6 +222,60 @@ print(response.json())`;
 })
 .then(response => response.json())
 .then(data => console.log(data));`;
+          case 'php':
+            return `<?php
+$curl = curl_init();
+
+curl_setopt_array($curl, [
+  CURLOPT_URL => '${baseUrl}/auth/csrf',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+  CURLOPT_CUSTOMREQUEST => 'GET'
+]);
+
+$response = curl_exec($curl);
+$err = curl_error($curl);
+
+curl_close($curl);
+
+if ($err) {
+  echo "cURL Error: " . $err;
+} else {
+  echo $response;
+}`;
+          case 'ruby':
+            return `require 'uri'
+require 'net/http'
+
+uri = URI.parse('${baseUrl}/auth/csrf')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = uri.scheme == 'https'
+
+request = Net::HTTP::Get.new(uri.request_uri)
+response = http.request(request)
+
+puts response.body`;
+          case 'java':
+            return `import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public class Main {
+    public static void main(String[] args) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("${baseUrl}/auth/csrf"))
+            .GET()
+            .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(HttpResponse::body)
+            .thenAccept(System.out::println)
+            .join();
+    }
+}`;
           default:
             return '';
         }
@@ -268,6 +322,84 @@ print(response.json())`;
 })
 .then(response => response.json())
 .then(data => console.log(data));`;
+          case 'php':
+            return `<?php
+$curl = curl_init();
+
+curl_setopt_array($curl, [
+  CURLOPT_URL => '${baseUrl}/auth/login',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+  CURLOPT_CUSTOMREQUEST => 'POST',
+  CURLOPT_POSTFIELDS => json_encode([
+    'username' => '${username || '<YOUR_USERNAME>'}',
+    'password' => '${password || '<YOUR_PASSWORD>'}'
+  ]),
+  CURLOPT_HTTPHEADER => [
+    'Content-Type: application/json',
+    'X-CSRF-Token: ${csrfToken || '<YOUR_CSRF_TOKEN>'}'
+  ]
+]);
+
+$response = curl_exec($curl);
+$err = curl_error($curl);
+
+curl_close($curl);
+
+if ($err) {
+  echo "cURL Error: " . $err;
+} else {
+  echo $response;
+}`;
+          case 'ruby':
+            return `require 'uri'
+require 'net/http'
+require 'json'
+
+uri = URI.parse('${baseUrl}/auth/login')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = uri.scheme == 'https'
+
+request = Net::HTTP::Post.new(uri.request_uri)
+request['Content-Type'] = 'application/json'
+request['X-CSRF-Token'] = '${csrfToken || '<YOUR_CSRF_TOKEN>'}'
+request.body = {
+  username: '${username || '<YOUR_USERNAME>'}',
+  password: '${password || '<YOUR_PASSWORD>'}'
+}.to_json
+
+response = http.request(request)
+puts response.body`;
+          case 'java':
+            return `import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public class Main {
+    public static void main(String[] args) {
+        HttpClient client = HttpClient.newHttpClient();
+        String jsonBody = String.format("""
+            {
+                "username": "${username || '<YOUR_USERNAME>'}",
+                "password": "${password || '<YOUR_PASSWORD>'}"
+            }
+            """);
+            
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("${baseUrl}/auth/login"))
+            .header("Content-Type", "application/json")
+            .header("X-CSRF-Token", "${csrfToken || '<YOUR_CSRF_TOKEN>'}")
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(HttpResponse::body)
+            .thenAccept(System.out::println)
+            .join();
+    }
+}`;
           default:
             return '';
         }
@@ -314,6 +446,84 @@ print(response.json())`;
 })
 .then(response => response.json())
 .then(data => console.log(data));`;
+          case 'php':
+            return `<?php
+$curl = curl_init();
+
+curl_setopt_array($curl, [
+  CURLOPT_URL => '${baseUrl}/payments/cash-in',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+  CURLOPT_CUSTOMREQUEST => 'POST',
+  CURLOPT_POSTFIELDS => json_encode([
+    'amount' => ${amount || '<AMOUNT_IN_CENTS>'},
+    'currency' => 'PHP'${webhookUrl ? ",\n    'webhook_url' => '" + webhookUrl + "'" : ''}${redirectUrl ? ",\n    'redirect_url' => '" + redirectUrl + "'" : ''}
+  ]),
+  CURLOPT_HTTPHEADER => [
+    'Content-Type: application/json',
+    'Authorization: Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}'
+  ]
+]);
+
+$response = curl_exec($curl);
+$err = curl_error($curl);
+
+curl_close($curl);
+
+if ($err) {
+  echo "cURL Error: " . $err;
+} else {
+  echo $response;
+}`;
+          case 'ruby':
+            return `require 'uri'
+require 'net/http'
+require 'json'
+
+uri = URI.parse('${baseUrl}/payments/cash-in')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = uri.scheme == 'https'
+
+request = Net::HTTP::Post.new(uri.request_uri)
+request['Content-Type'] = 'application/json'
+request['Authorization'] = 'Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}'
+request.body = {
+  amount: ${amount || '<AMOUNT_IN_CENTS>'},
+  currency: 'PHP'${webhookUrl ? ",\n  webhook_url: '" + webhookUrl + "'" : ''}${redirectUrl ? ",\n  redirect_url: '" + redirectUrl + "'" : ''}
+}.to_json
+
+response = http.request(request)
+puts response.body`;
+          case 'java':
+            return `import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public class Main {
+    public static void main(String[] args) {
+        HttpClient client = HttpClient.newHttpClient();
+        String jsonBody = String.format("""
+            {
+                "amount": ${amount || '<AMOUNT_IN_CENTS>'},
+                "currency": "PHP"${webhookUrl ? ',\n                "webhook_url": "' + webhookUrl + '"' : ''}${redirectUrl ? ',\n                "redirect_url": "' + redirectUrl + '"' : ''}
+            }
+            """);
+            
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("${baseUrl}/payments/cash-in"))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}")
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(HttpResponse::body)
+            .thenAccept(System.out::println)
+            .join();
+    }
+}`;
           default:
             return '';
         }
@@ -361,6 +571,9 @@ print(response.json())`;
                         <TabsTrigger value="curl">cURL</TabsTrigger>
                         <TabsTrigger value="python">Python</TabsTrigger>
                         <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                        <TabsTrigger value="php">PHP</TabsTrigger>
+                        <TabsTrigger value="ruby">Ruby</TabsTrigger>
+                        <TabsTrigger value="java">Java</TabsTrigger>
                       </TabsList>
                       <TabsContent value="curl">
                         <CodeBlockHighlighted
@@ -381,6 +594,27 @@ print(response.json())`;
                           code={getCodeExample('step1', 'javascript')}
                           language="javascript"
                           title="Get CSRF Token using JavaScript"
+                        />
+                      </TabsContent>
+                      <TabsContent value="php">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'php')}
+                          language="php"
+                          title="Get CSRF Token using PHP"
+                        />
+                      </TabsContent>
+                      <TabsContent value="ruby">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'ruby')}
+                          language="ruby"
+                          title="Get CSRF Token using Ruby"
+                        />
+                      </TabsContent>
+                      <TabsContent value="java">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'java')}
+                          language="java"
+                          title="Get CSRF Token using Java"
                         />
                       </TabsContent>
                     </Tabs>
@@ -426,6 +660,9 @@ print(response.json())`;
                         <TabsTrigger value="curl">cURL</TabsTrigger>
                         <TabsTrigger value="python">Python</TabsTrigger>
                         <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                        <TabsTrigger value="php">PHP</TabsTrigger>
+                        <TabsTrigger value="ruby">Ruby</TabsTrigger>
+                        <TabsTrigger value="java">Java</TabsTrigger>
                       </TabsList>
                       <TabsContent value="curl">
                         <CodeBlockHighlighted
@@ -446,6 +683,27 @@ print(response.json())`;
                           code={getCodeExample('step2', 'javascript')}
                           language="javascript"
                           title="Login using JavaScript"
+                        />
+                      </TabsContent>
+                      <TabsContent value="php">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'php')}
+                          language="php"
+                          title="Login using PHP"
+                        />
+                      </TabsContent>
+                      <TabsContent value="ruby">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'ruby')}
+                          language="ruby"
+                          title="Login using Ruby"
+                        />
+                      </TabsContent>
+                      <TabsContent value="java">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'java')}
+                          language="java"
+                          title="Login using Java"
                         />
                       </TabsContent>
                     </Tabs>
@@ -504,6 +762,9 @@ print(response.json())`;
                         <TabsTrigger value="curl">cURL</TabsTrigger>
                         <TabsTrigger value="python">Python</TabsTrigger>
                         <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                        <TabsTrigger value="php">PHP</TabsTrigger>
+                        <TabsTrigger value="ruby">Ruby</TabsTrigger>
+                        <TabsTrigger value="java">Java</TabsTrigger>
                       </TabsList>
                       <TabsContent value="curl">
                         <CodeBlockHighlighted
@@ -524,6 +785,27 @@ print(response.json())`;
                           code={getCodeExample('step3', 'javascript')}
                           language="javascript"
                           title="Cash-in using JavaScript"
+                        />
+                      </TabsContent>
+                      <TabsContent value="php">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'php')}
+                          language="php"
+                          title="Cash-in using PHP"
+                        />
+                      </TabsContent>
+                      <TabsContent value="ruby">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'ruby')}
+                          language="ruby"
+                          title="Cash-in using Ruby"
+                        />
+                      </TabsContent>
+                      <TabsContent value="java">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'java')}
+                          language="java"
+                          title="Cash-in using Java"
                         />
                       </TabsContent>
                     </Tabs>
