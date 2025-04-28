@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodeBlock } from "./code-block";
+import { CodeBlockHighlighted } from "./code-block-highlighted";
 import { Clipboard, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentSimulator } from "./payment-simulator";
@@ -157,23 +156,80 @@ export function SandboxForm() {
     }
   };
 
-  const getCurlExample = (step: string) => {
+  const getCodeExample = (step: string, language: string) => {
+    const baseUrl = "https://api.directpay.com/v1";
+    
     switch(step) {
       case 'step1':
-        return `curl -X GET \\
-  'https://api.directpay.com/v1/auth/csrf'`;
+        switch(language) {
+          case 'curl':
+            return `curl -X GET \\
+  '${baseUrl}/auth/csrf'`;
+          case 'python':
+            return `import requests
+
+response = requests.get('${baseUrl}/auth/csrf')
+print(response.json())`;
+          case 'javascript':
+            return `fetch('${baseUrl}/auth/csrf', {
+  method: 'GET'
+})
+.then(response => response.json())
+.then(data => console.log(data));`;
+          default:
+            return '';
+        }
       case 'step2':
-        return `curl -X POST \\
-  'https://api.directpay.com/v1/auth/login' \\
+        switch(language) {
+          case 'curl':
+            return `curl -X POST \\
+  '${baseUrl}/auth/login' \\
   -H 'Content-Type: application/json' \\
   -H 'X-CSRF-Token: ${csrfToken || 'YOUR_CSRF_TOKEN'}' \\
   -d '{
     "username": "${username || 'your.email@example.com'}",
     "password": "${password || 'your_password'}"
   }'`;
+          case 'python':
+            return `import requests
+
+headers = {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': '${csrfToken || 'YOUR_CSRF_TOKEN'}'
+}
+
+data = {
+    'username': '${username || 'your.email@example.com'}',
+    'password': '${password || 'your_password'}'
+}
+
+response = requests.post('${baseUrl}/auth/login', 
+    json=data, 
+    headers=headers
+)
+print(response.json())`;
+          case 'javascript':
+            return `fetch('${baseUrl}/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': '${csrfToken || 'YOUR_CSRF_TOKEN'}'
+  },
+  body: JSON.stringify({
+    username: '${username || 'your.email@example.com'}',
+    password: '${password || 'your_password'}'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));`;
+          default:
+            return '';
+        }
       default:
-        return `curl -X POST \\
-  'https://api.directpay.com/v1/payments/cash-in' \\
+        switch(language) {
+          case 'curl':
+            return `curl -X POST \\
+  '${baseUrl}/payments/cash-in' \\
   -H 'Content-Type: application/json' \\
   -H 'Authorization: Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}' \\
   -d '{
@@ -182,6 +238,45 @@ export function SandboxForm() {
     "webhook_url": "${webhookUrl || "https://your-webhook-url.com"}",
     "redirect_url": "${redirectUrl || "https://your-success-url.com"}"
   }'`;
+          case 'python':
+            return `import requests
+
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}'
+}
+
+data = {
+    'amount': ${amount || "5000"},
+    'currency': 'PHP',
+    'webhook_url': '${webhookUrl || "https://your-webhook-url.com"}',
+    'redirect_url': '${redirectUrl || "https://your-success-url.com"}'
+}
+
+response = requests.post('${baseUrl}/payments/cash-in', 
+    json=data, 
+    headers=headers
+)
+print(response.json())`;
+          case 'javascript':
+            return `fetch('${baseUrl}/payments/cash-in', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}'
+  },
+  body: JSON.stringify({
+    amount: ${amount || "5000"},
+    currency: 'PHP',
+    webhook_url: '${webhookUrl || "https://your-webhook-url.com"}',
+    redirect_url: '${redirectUrl || "https://your-success-url.com"}'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));`;
+          default:
+            return '';
+        }
     }
   };
 
@@ -217,13 +312,36 @@ export function SandboxForm() {
                     {isLoading ? "Retrieving..." : "Get CSRF Token"}
                   </Button>
 
-                  <div className="mt-6">
-                    <Label>CURL Example</Label>
-                    <CodeBlock
-                      code={getCurlExample('step1')}
-                      language="bash"
-                      title="Get CSRF Token"
-                    />
+                  <div className="mt-6 space-y-4">
+                    <Label>Code Examples</Label>
+                    <Tabs defaultValue="curl" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="curl">cURL</TabsTrigger>
+                        <TabsTrigger value="python">Python</TabsTrigger>
+                        <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="curl">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'curl')}
+                          language="bash"
+                          title="Get CSRF Token using cURL"
+                        />
+                      </TabsContent>
+                      <TabsContent value="python">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'python')}
+                          language="python"
+                          title="Get CSRF Token using Python"
+                        />
+                      </TabsContent>
+                      <TabsContent value="javascript">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step1', 'javascript')}
+                          language="javascript"
+                          title="Get CSRF Token using JavaScript"
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </div>
               </TabsContent>
@@ -259,13 +377,36 @@ export function SandboxForm() {
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>
 
-                  <div className="mt-6">
-                    <Label>CURL Example</Label>
-                    <CodeBlock
-                      code={getCurlExample('step2')}
-                      language="bash"
-                      title="Login Request"
-                    />
+                  <div className="mt-6 space-y-4">
+                    <Label>Code Examples</Label>
+                    <Tabs defaultValue="curl" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="curl">cURL</TabsTrigger>
+                        <TabsTrigger value="python">Python</TabsTrigger>
+                        <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="curl">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'curl')}
+                          language="bash"
+                          title="Login using cURL"
+                        />
+                      </TabsContent>
+                      <TabsContent value="python">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'python')}
+                          language="python"
+                          title="Login using Python"
+                        />
+                      </TabsContent>
+                      <TabsContent value="javascript">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step2', 'javascript')}
+                          language="javascript"
+                          title="Login using JavaScript"
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </div>
               </TabsContent>
@@ -314,13 +455,36 @@ export function SandboxForm() {
                     {isLoading ? "Processing..." : "Create Cash-In Request"}
                   </Button>
 
-                  <div className="mt-6">
-                    <Label>CURL Example</Label>
-                    <CodeBlock
-                      code={getCurlExample('step3')}
-                      language="bash"
-                      title="Cash-In Request"
-                    />
+                  <div className="mt-6 space-y-4">
+                    <Label>Code Examples</Label>
+                    <Tabs defaultValue="curl" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="curl">cURL</TabsTrigger>
+                        <TabsTrigger value="python">Python</TabsTrigger>
+                        <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="curl">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'curl')}
+                          language="bash"
+                          title="Cash-in using cURL"
+                        />
+                      </TabsContent>
+                      <TabsContent value="python">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'python')}
+                          language="python"
+                          title="Cash-in using Python"
+                        />
+                      </TabsContent>
+                      <TabsContent value="javascript">
+                        <CodeBlockHighlighted
+                          code={getCodeExample('step3', 'javascript')}
+                          language="javascript"
+                          title="Cash-in using JavaScript"
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </div>
               </TabsContent>
