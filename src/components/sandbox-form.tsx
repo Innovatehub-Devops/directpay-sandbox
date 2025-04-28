@@ -231,22 +231,22 @@ print(response.json())`;
             return `curl -X POST \\
   '${baseUrl}/auth/login' \\
   -H 'Content-Type: application/json' \\
-  -H 'X-CSRF-Token: ${csrfToken || 'YOUR_CSRF_TOKEN'}' \\
+  -H 'X-CSRF-Token: ${csrfToken || '<YOUR_CSRF_TOKEN>'}' \\
   -d '{
-    "username": "${username || 'your.email@example.com'}",
-    "password": "${password || 'your_password'}"
+    "username": "${username || '<YOUR_USERNAME>'}",
+    "password": "${password || '<YOUR_PASSWORD>'}"
   }'`;
           case 'python':
             return `import requests
 
 headers = {
     'Content-Type': 'application/json',
-    'X-CSRF-Token': '${csrfToken || 'YOUR_CSRF_TOKEN'}'
+    'X-CSRF-Token': '${csrfToken || '<YOUR_CSRF_TOKEN>'}'
 }
 
 data = {
-    'username': '${username || 'your.email@example.com'}',
-    'password': '${password || 'your_password'}'
+    'username': '${username || '<YOUR_USERNAME>'}',
+    'password': '${password || '<YOUR_PASSWORD>'}'
 }
 
 response = requests.post('${baseUrl}/auth/login', 
@@ -259,11 +259,11 @@ print(response.json())`;
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-CSRF-Token': '${csrfToken || 'YOUR_CSRF_TOKEN'}'
+    'X-CSRF-Token': '${csrfToken || '<YOUR_CSRF_TOKEN>'}'
   },
   body: JSON.stringify({
-    username: '${username || 'your.email@example.com'}',
-    password: '${password || 'your_password'}'
+    username: '${username || '<YOUR_USERNAME>'}',
+    password: '${password || '<YOUR_PASSWORD>'}'
   })
 })
 .then(response => response.json())
@@ -271,32 +271,28 @@ print(response.json())`;
           default:
             return '';
         }
-      default:
+      case 'step3':
         switch(language) {
           case 'curl':
             return `curl -X POST \\
   '${baseUrl}/payments/cash-in' \\
   -H 'Content-Type: application/json' \\
-  -H 'Authorization: Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}' \\
+  -H 'Authorization: Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}' \\
   -d '{
-    "amount": ${amount || "5000"},
-    "currency": "PHP",
-    "webhook_url": "${webhookUrl || "https://your-webhook-url.com"}",
-    "redirect_url": "${redirectUrl || "https://your-success-url.com"}"
+    "amount": ${amount || '<AMOUNT_IN_CENTS>'},
+    "currency": "PHP"${webhookUrl ? ',\n    "webhook_url": "' + webhookUrl + '"' : ''}${redirectUrl ? ',\n    "redirect_url": "' + redirectUrl + '"' : ''}
   }'`;
           case 'python':
             return `import requests
 
 headers = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}'
+    'Authorization': 'Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}'
 }
 
 data = {
-    'amount': ${amount || "5000"},
-    'currency': 'PHP',
-    'webhook_url': '${webhookUrl || "https://your-webhook-url.com"}',
-    'redirect_url': '${redirectUrl || "https://your-success-url.com"}'
+    'amount': ${amount || '<AMOUNT_IN_CENTS>'},
+    'currency': 'PHP'${webhookUrl ? ",\n    'webhook_url': '" + webhookUrl + "'" : ''}${redirectUrl ? ",\n    'redirect_url': '" + redirectUrl + "'" : ''}
 }
 
 response = requests.post('${baseUrl}/payments/cash-in', 
@@ -309,13 +305,11 @@ print(response.json())`;
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer ${sessionToken || 'YOUR_SESSION_TOKEN'}'
+    'Authorization': 'Bearer ${sessionToken || '<YOUR_SESSION_TOKEN>'}'
   },
   body: JSON.stringify({
-    amount: ${amount || "5000"},
-    currency: 'PHP',
-    webhook_url: '${webhookUrl || "https://your-webhook-url.com"}',
-    redirect_url: '${redirectUrl || "https://your-success-url.com"}'
+    amount: ${amount || '<AMOUNT_IN_CENTS>'},
+    currency: 'PHP'${webhookUrl ? ',\n    webhook_url: "' + webhookUrl + '"' : ''}${redirectUrl ? ',\n    redirect_url: "' + redirectUrl + '"' : ''}
   })
 })
 .then(response => response.json())
@@ -323,6 +317,8 @@ print(response.json())`;
           default:
             return '';
         }
+      default:
+        return '';
     }
   };
 
