@@ -24,6 +24,30 @@ function logRequest(req: Request, message = "") {
   console.log("  Headers:", Object.fromEntries(req.headers.entries()));
 }
 
+// Add payment validation helper
+function validatePaymentRequest(body: any) {
+  const errors = [];
+  
+  if (!body.amount || typeof body.amount !== 'number') {
+    errors.push("amount must be a valid number");
+  }
+  
+  if (!body.currency || body.currency !== "PHP") {
+    errors.push("currency must be PHP");
+  }
+  
+  // Optional fields validation
+  if (body.webhook_url && typeof body.webhook_url !== 'string') {
+    errors.push("webhook_url must be a valid URL string");
+  }
+  
+  if (body.redirect_url && typeof body.redirect_url !== 'string') {
+    errors.push("redirect_url must be a valid URL string");
+  }
+  
+  return errors;
+}
+
 serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -171,7 +195,119 @@ serve(async (req) => {
       }
     }
 
-    // ... keep existing code (payments endpoints and other API routes)
+    // Handle payments endpoints
+    if (endpoint[0] === "payments") {
+      // Cash-in endpoint
+      if (endpoint[1] === "cash-in" && req.method === "POST") {
+        try {
+          // Parse request body
+          const body = await req.json();
+          console.log("Processing cash-in request:", body);
+          
+          // Validate request body
+          const validationErrors = validatePaymentRequest(body);
+          if (validationErrors.length > 0) {
+            console.log("Validation errors:", validationErrors);
+            return new Response(
+              JSON.stringify({ 
+                error: "Invalid request",
+                details: validationErrors 
+              }),
+              { 
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                },
+                status: 400 
+              }
+            );
+          }
+          
+          // Generate a unique payment ID
+          const paymentId = crypto.randomUUID();
+          console.log("Generated payment ID:", paymentId);
+          
+          // Create payment response
+          const paymentResponse = {
+            payment_id: paymentId,
+            amount: body.amount,
+            currency: body.currency,
+            status: "pending",
+            checkout_url: `https://checkout.direct-pay.com/p/${paymentId}`,
+            expires_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour expiry
+          };
+          
+          console.log("Payment request created successfully:", paymentResponse);
+          
+          return new Response(
+            JSON.stringify(paymentResponse),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              },
+              status: 200 
+            }
+          );
+        } catch (error) {
+          console.error("Error processing cash-in request:", error);
+          return new Response(
+            JSON.stringify({ 
+              error: "Failed to process payment request",
+              details: error.message 
+            }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              },
+              status: 500 
+            }
+          );
+        }
+      }
+      
+      // Payment status endpoint
+      if (endpoint[1] === "status" && req.method === "GET") {
+        const params = new URLSearchParams(url.search);
+        const paymentId = params.get("payment_id");
+        const amount = params.get("amount");
+        
+        if (!paymentId || !amount) {
+          return new Response(
+            JSON.stringify({ 
+              error: "Missing required parameters",
+              details: "Both payment_id and amount are required" 
+            }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              },
+              status: 400 
+            }
+          );
+        }
+        
+        // For demo purposes, always return success
+        return new Response(
+          JSON.stringify({
+            payment_id: paymentId,
+            amount: parseInt(amount),
+            currency: "PHP",
+            status: "completed",
+            completed_at: new Date().toISOString()
+          }),
+          { 
+            headers: { 
+              "Content-Type": "application/json",
+              ...corsHeaders
+            },
+            status: 200 
+          }
+        );
+      }
+    }
 
   } catch (error) {
     console.error("Error processing request:", error);
