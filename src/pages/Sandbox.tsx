@@ -29,6 +29,9 @@ const Sandbox = () => {
           <p className="text-muted-foreground">
             Test DirectPay API endpoints in a safe environment. No real transactions will be processed.
           </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            <b>Test credentials:</b> devtest@direct-payph.com / password123
+          </p>
         </div>
         
         <Tabs defaultValue="payment" className="space-y-4">
