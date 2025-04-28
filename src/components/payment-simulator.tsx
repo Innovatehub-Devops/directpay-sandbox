@@ -1,8 +1,9 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface PaymentSimulatorProps {
@@ -11,10 +12,19 @@ interface PaymentSimulatorProps {
   amount: string;
   redirectUrl?: string;
   onPaymentSuccess?: () => void;
+  onPaymentFail?: () => void;
 }
 
-export function PaymentSimulator({ isOpen, onClose, amount, redirectUrl, onPaymentSuccess }: PaymentSimulatorProps) {
+export function PaymentSimulator({ 
+  isOpen, 
+  onClose, 
+  amount, 
+  redirectUrl, 
+  onPaymentSuccess,
+  onPaymentFail 
+}: PaymentSimulatorProps) {
   const [step, setStep] = useState(1);
+  const [willSucceed, setWillSucceed] = useState(true);
   
   const handleOpenGcash = () => {
     setStep(2);
@@ -26,16 +36,23 @@ export function PaymentSimulator({ isOpen, onClose, amount, redirectUrl, onPayme
   const handlePayment = () => {
     setStep(5);
     setTimeout(() => {
-      if (onPaymentSuccess) {
-        onPaymentSuccess();
-      }
-      if (redirectUrl) {
-        window.open(redirectUrl, '_blank');
+      if (willSucceed) {
+        if (onPaymentSuccess) {
+          onPaymentSuccess();
+        }
+        if (redirectUrl) {
+          window.open(redirectUrl, '_blank');
+        }
+      } else {
+        if (onPaymentFail) {
+          onPaymentFail();
+        }
+        toast.error("Payment failed");
       }
       onClose();
     }, 2000);
   };
-  
+
   const renderStatusBar = () => (
     <div className="flex justify-between items-center px-2 py-1">
       <div className="text-sm font-semibold">1:30</div>
@@ -92,9 +109,22 @@ export function PaymentSimulator({ isOpen, onClose, amount, redirectUrl, onPayme
           <div className="text-gray-500">Merchant</div>
           <div className="font-medium">PayPlus</div>
         </div>
-        <div className="flex justify-between mb-6">
+        <div className="flex justify-between mb-4">
           <div className="text-gray-500">Amount Due</div>
           <div className="text-blue-600 font-bold text-xl">PHP {parseInt(amount) / 100}.00</div>
+        </div>
+        <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="payment-success">Simulate Success</Label>
+            <Switch
+              id="payment-success"
+              checked={willSucceed}
+              onCheckedChange={setWillSucceed}
+            />
+          </div>
+          <div className="text-sm text-gray-500">
+            {willSucceed ? "Payment will succeed" : "Payment will fail"}
+          </div>
         </div>
         <Button 
           className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6"
@@ -230,15 +260,29 @@ export function PaymentSimulator({ isOpen, onClose, amount, redirectUrl, onPayme
 
   const renderStepFive = () => (
     <div className="bg-white h-full flex flex-col items-center justify-center p-8 text-center">
-      <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6">
-        <Check className="w-10 h-10 text-white" />
-      </div>
-      <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
-      <p className="text-gray-600 mb-4">
-        PHP {parseInt(amount) / 100}.00 has been paid successfully
-      </p>
+      {willSucceed ? (
+        <>
+          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6">
+            <Check className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
+          <p className="text-gray-600 mb-4">
+            PHP {parseInt(amount) / 100}.00 has been paid successfully
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mb-6">
+            <X className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Payment Failed</h2>
+          <p className="text-gray-600 mb-4">
+            The payment could not be processed
+          </p>
+        </>
+      )}
       <div className="text-sm text-gray-500">
-        Redirecting to merchant...
+        {willSucceed ? "Redirecting to merchant..." : "Please try again"}
       </div>
     </div>
   );

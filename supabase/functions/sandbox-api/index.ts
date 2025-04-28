@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // CORS headers to allow requests from any origin
@@ -160,6 +159,7 @@ serve(async (req) => {
         );
       } else if (endpoint[1] === "status" && req.method === "GET") {
         const paymentId = url.searchParams.get("payment_id");
+        const simulateSuccess = url.searchParams.get("simulate_success") !== "false";
         
         if (!paymentId) {
           return new Response(
@@ -170,6 +170,24 @@ serve(async (req) => {
                 ...corsHeaders
               }, 
               status: 400 
+            }
+          );
+        }
+        
+        if (!simulateSuccess) {
+          return new Response(
+            JSON.stringify({
+              payment_id: paymentId,
+              status: "failed",
+              error: "Payment simulation failed",
+              completed_at: new Date().toISOString()
+            }),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                ...corsHeaders
+              }, 
+              status: 200 
             }
           );
         }
