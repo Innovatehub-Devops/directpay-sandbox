@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeBlockHighlighted } from "./code-block-highlighted";
+import { CodeBlock } from "./code-block";
 import { Clipboard, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentSimulator } from "./payment-simulator";
