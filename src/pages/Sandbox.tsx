@@ -5,6 +5,9 @@ import { WebhookTester } from "@/components/webhook-tester";
 import { EndpointTester } from "@/components/endpoint-tester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CodeBlock } from "@/components/code-block";
 
 // Define the API URL - this is the real production URL
 const API_BASE_URL = "https://sandbox.direct-payph.com";
@@ -17,6 +20,9 @@ const Sandbox = () => {
   const [testResult, setTestResult] = useState<string | null>(null);
   const [apiBaseUrl, setApiBaseUrl] = useState(LOCAL_API_BASE_URL);
   const [testMessage, setTestMessage] = useState("");
+  const [rawResponse, setRawResponse] = useState<string | null>(null);
+  const [debugHeaders, setDebugHeaders] = useState<Record<string, string> | null>(null);
+  const [isTestingEndpoint, setIsTestingEndpoint] = useState(false);
 
   // Simple test function to verify API connectivity
   useEffect(() => {
@@ -98,6 +104,59 @@ const Sandbox = () => {
     testEndpoint();
   }, []);
 
+  // Debug function to manually test an endpoint
+  const debugTestEndpoint = async () => {
+    setIsTestingEndpoint(true);
+    setRawResponse(null);
+    setDebugHeaders(null);
+    
+    try {
+      const endpoint = "/auth/csrf";
+      const url = `${LOCAL_API_BASE_URL}${endpoint}`;
+      
+      console.log(`Debug testing endpoint: ${url}`);
+      toast.info(`Testing ${url}...`);
+      
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      // Collect headers for debugging
+      const headersObj: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headersObj[key] = value;
+      });
+      setDebugHeaders(headersObj);
+      
+      // Try to get response as text first
+      const textResponse = await response.text();
+      setRawResponse(textResponse);
+      
+      // Try to parse as JSON if possible
+      try {
+        const jsonResponse = JSON.parse(textResponse);
+        console.log("Response as JSON:", jsonResponse);
+        if (jsonResponse && jsonResponse.csrf_token) {
+          toast.success("CSRF token retrieved successfully!");
+        } else {
+          toast.warning("Response does not contain a valid CSRF token");
+        }
+      } catch (e) {
+        console.log("Response is not valid JSON");
+        toast.warning("Response is not valid JSON");
+      }
+      
+    } catch (error) {
+      console.error("Debug test error:", error);
+      toast.error(`Test failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsTestingEndpoint(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="max-w-6xl mx-auto">
@@ -118,6 +177,48 @@ const Sandbox = () => {
               <div className="text-xs">Using local sandbox implementation as fallback.</div>
             </div>
           )}
+          
+          {/* Debug test button */}
+          <div className="mt-4 p-4 border border-yellow-300 bg-yellow-50 rounded-md">
+            <h2 className="text-lg font-semibold text-yellow-800 mb-2">API Debug Tester</h2>
+            <p className="text-sm text-yellow-700 mb-4">
+              This will directly test the CSRF endpoint to see what response it returns.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={debugTestEndpoint}
+              disabled={isTestingEndpoint}
+              className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+            >
+              {isTestingEndpoint ? "Testing..." : "Test /auth/csrf Endpoint"}
+            </Button>
+            
+            {rawResponse && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-base">Raw Response</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xs font-medium mb-2">Headers:</div>
+                  {debugHeaders && (
+                    <CodeBlock 
+                      code={JSON.stringify(debugHeaders, null, 2)} 
+                      language="json"
+                      title="Response Headers" 
+                    />
+                  )}
+                  <div className="text-xs font-medium mb-2 mt-4">Body:</div>
+                  <div className="max-h-96 overflow-auto border border-border rounded-md">
+                    <CodeBlock
+                      code={rawResponse}
+                      language="html" 
+                      title="Raw Response"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
         
         <Tabs defaultValue="payment" className="space-y-4">
