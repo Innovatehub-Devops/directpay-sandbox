@@ -416,6 +416,20 @@ serve(async (req) => {
       }
     }
 
+    // Handle unknown endpoints
+    return new Response(
+      JSON.stringify({
+        error: "Not found",
+        details: "The requested endpoint does not exist"
+      }),
+      { 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders
+        },
+        status: 404 
+      }
+    );
   } catch (error) {
     console.error("Error processing request:", error);
     return new Response(
