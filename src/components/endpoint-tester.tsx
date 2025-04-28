@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CodeBlock } from "./code-block";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 interface EndpointTesterProps {
   apiBaseUrl: string;
@@ -24,8 +25,10 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
   const [headers, setHeaders] = useState("");
   const [body, setBody] = useState("");
   const [response, setResponse] = useState<any>(null);
+  const [rawResponse, setRawResponse] = useState<string | null>(null);
   const [curlCommand, setCurlCommand] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const endpoint = AVAILABLE_ENDPOINTS.find(e => e.id === selectedEndpoint)!;
 
@@ -62,6 +65,9 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
 
   const executeRequest = async () => {
     setIsLoading(true);
+    setError(null);
+    setRawResponse(null);
+    
     try {
       const requestHeaders: Record<string, string> = {
         'Content-Type': 'application/json'
@@ -87,21 +93,40 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
         }
       }
 
+      console.log(`Executing request to ${apiBaseUrl}${endpoint.path}`);
       const response = await fetch(`${apiBaseUrl}${endpoint.path}`, {
         method: endpoint.method,
         headers: requestHeaders,
         body: requestBody ? JSON.stringify(requestBody) : undefined
       });
 
-      const data = await response.json();
-      setResponse({
-        status: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: data
-      });
+      // Check content type to determine how to parse the response
+      const contentType = response.headers.get("content-type");
+      console.log("Response content type:", contentType);
+      
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        setResponse({
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: data
+        });
+        setRawResponse(null);
+      } else {
+        // Handle non-JSON responses (e.g., HTML, text)
+        const text = await response.text();
+        setRawResponse(text);
+        setResponse({
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: "Non-JSON response received. See raw response below."
+        });
+      }
+      
       toast.success("Request executed successfully");
     } catch (error) {
       console.error("Request failed:", error);
+      setError(error instanceof Error ? error.message : "Unknown error occurred");
       toast.error("Request failed. See console for details.");
     } finally {
       setIsLoading(false);
@@ -135,6 +160,9 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              API Base URL: <code className="bg-muted px-1 py-0.5 rounded">{apiBaseUrl}</code>
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -177,6 +205,16 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
             </div>
           )}
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start space-x-3">
+              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-red-800">Request Error</h4>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
           {response && (
             <div className="space-y-2">
               <Label>Response</Label>
@@ -185,6 +223,19 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
                 language="json"
                 title="Response"
               />
+            </div>
+          )}
+
+          {rawResponse && (
+            <div className="space-y-2">
+              <Label>Raw Response</Label>
+              <div className="max-h-96 overflow-auto border border-border rounded-md">
+                <CodeBlock
+                  code={rawResponse}
+                  language="html"
+                  title="Raw Response"
+                />
+              </div>
             </div>
           )}
         </CardContent>
