@@ -15,19 +15,36 @@ const Sandbox = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check for test account session first
+        const testSession = localStorage.getItem('supabase.auth.token');
+        if (testSession) {
+          try {
+            const parsedSession = JSON.parse(testSession);
+            if (parsedSession?.currentSession?.user?.user_metadata?.is_test_account) {
+              console.log("Test account session found, allowing access");
+              setIsAuthenticated(true);
+              setIsLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error("Error parsing test session:", e);
+          }
+        }
+        
+        // Check for regular Supabase session
         const { data } = await supabase.auth.getSession();
         console.log("Sandbox page - Auth check:", data.session ? "Authenticated" : "Not authenticated");
         
         if (!data.session) {
           console.log("No session found, redirecting to /sandbox/auth");
-          navigate('/sandbox/auth');
+          navigate('/sandbox/auth', { replace: true });
         } else {
           console.log("Session found, allowing access to sandbox");
           setIsAuthenticated(true);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        navigate('/sandbox/auth');
+        navigate('/sandbox/auth', { replace: true });
       } finally {
         setIsLoading(false);
       }
@@ -39,7 +56,9 @@ const Sandbox = () => {
       (event, session) => {
         console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT') {
-          navigate('/sandbox/auth');
+          // Also clear test account session if exists
+          localStorage.removeItem('supabase.auth.token');
+          navigate('/sandbox/auth', { replace: true });
         } else if (session) {
           setIsAuthenticated(true);
         }
@@ -50,6 +69,12 @@ const Sandbox = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const handleSignOut = () => {
+    // Clear both Supabase auth session and any test account session
+    localStorage.removeItem('supabase.auth.token');
+    supabase.auth.signOut();
+  };
 
   if (isLoading) {
     return <div className="container mx-auto p-4 text-center">Loading...</div>;
@@ -67,7 +92,7 @@ const Sandbox = () => {
               Test DirectPay API endpoints in a safe environment. No real transactions will be processed.
             </p>
           </div>
-          <Button variant="outline" onClick={() => supabase.auth.signOut()}>
+          <Button variant="outline" onClick={handleSignOut}>
             Sign Out
           </Button>
         </div>

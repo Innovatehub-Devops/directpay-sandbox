@@ -28,8 +28,7 @@ export function SandboxAuth() {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           console.log("User already authenticated, redirecting to sandbox");
-          // Use window.location for hard navigation
-          window.location.href = '/sandbox';
+          navigate('/sandbox', { replace: true });
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -37,7 +36,7 @@ export function SandboxAuth() {
     };
     
     checkAuth();
-  }, []);
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +47,32 @@ export function SandboxAuth() {
       // Special handling for test accounts
       if (TEST_ACCOUNTS.includes(email.trim()) && password === TEST_PASSWORD) {
         console.log("Test account login successful");
+        
+        // Create a custom session for test accounts
+        const testUser = {
+          id: `test-${Date.now()}`,
+          email: email.trim(),
+          role: 'authenticated',
+          app_metadata: { provider: 'test' },
+          user_metadata: { is_test_account: true }
+        };
+        
+        // Store auth data in localStorage to persist the session
+        localStorage.setItem('supabase.auth.token', JSON.stringify({
+          currentSession: {
+            access_token: `test-token-${Date.now()}`,
+            user: testUser
+          }
+        }));
+        
         toast.success("Login successful!");
         
-        // Use window.location for hard navigation after a short delay
+        // Use navigate with replace to prevent back navigation issues
         setTimeout(() => {
-          console.log("Navigating to /sandbox using window.location");
-          window.location.href = '/sandbox';
-        }, 800);
+          console.log("Navigating to /sandbox after test account login");
+          navigate('/sandbox', { replace: true });
+        }, 500);
+        
         return;
       }
       
@@ -71,11 +89,10 @@ export function SandboxAuth() {
       } else if (data.user) {
         toast.success("Login successful!");
         
-        // Use window.location for hard navigation after a short delay
         setTimeout(() => {
           console.log("Navigating to /sandbox after Supabase auth");
-          window.location.href = '/sandbox';
-        }, 800);
+          navigate('/sandbox', { replace: true });
+        }, 500);
       }
     } catch (error: any) {
       console.error("Login error:", error);
