@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { SandboxForm } from "@/components/sandbox-form";
 import { WebhookTester } from "@/components/webhook-tester";
+import { EndpointTester } from "@/components/endpoint-tester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define the API URL - this is the real production URL
@@ -22,6 +23,7 @@ const Sandbox = () => {
           <TabsList>
             <TabsTrigger value="payment">Payment Testing</TabsTrigger>
             <TabsTrigger value="webhook">Webhook Testing</TabsTrigger>
+            <TabsTrigger value="admin">Admin Testing</TabsTrigger>
           </TabsList>
           
           <TabsContent value="payment">
@@ -30,6 +32,10 @@ const Sandbox = () => {
           
           <TabsContent value="webhook">
             <WebhookTester />
+          </TabsContent>
+
+          <TabsContent value="admin">
+            <EndpointTester apiBaseUrl={API_BASE_URL} />
           </TabsContent>
         </Tabs>
       </div>
