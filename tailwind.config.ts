@@ -64,7 +64,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				code: {
-					DEFAULT: 'hsl(var(--code-background))',
+					background: 'hsl(var(--code-background))',
 					foreground: 'hsl(var(--code-foreground))'
 				}
 			},
