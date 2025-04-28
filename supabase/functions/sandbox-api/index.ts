@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // CORS headers to allow requests from any origin
@@ -52,7 +51,9 @@ serve(async (req) => {
             status: 200 
           }
         );
-      } else if (endpoint[1] === "login" && req.method === "POST") {
+      }
+      
+      if (endpoint[1] === "login" && req.method === "POST") {
         // Validate CSRF token
         const csrfToken = req.headers.get("x-csrf-token");
         console.log("Received login request with CSRF token:", csrfToken);
