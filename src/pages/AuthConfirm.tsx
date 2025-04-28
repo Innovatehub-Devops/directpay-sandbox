@@ -20,9 +20,10 @@ const AuthConfirm = () => {
           throw new Error("Missing token or confirmation type");
         }
 
+        // Using standard Supabase email verification
         const { error } = await supabase.auth.verifyOtp({
           token_hash: token,
-          type: "signup",
+          type: "email",
         });
 
         if (error) {
