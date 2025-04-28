@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Enhanced CORS headers to allow requests from any origin during development
@@ -8,16 +9,44 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Simplified CSRF token storage with Map
-const csrfTokens = new Map();
+// Time-based CSRF token validation
+interface CSRFToken {
+  token: string;
+  expires: number;
+}
 
-// Static test credentials - these should work consistently
+// Generate a CSRF token with 1-hour expiration
+function generateCSRFToken(): CSRFToken {
+  return {
+    token: crypto.randomUUID(),
+    expires: Date.now() + 3600000 // 1 hour expiration
+  };
+}
+
+// Validate a CSRF token
+function validateCSRFToken(token: string, tokens: Map<string, number>): boolean {
+  const expiry = tokens.get(token);
+  if (!expiry) return false;
+  
+  // Check if token has expired
+  if (Date.now() > expiry) {
+    tokens.delete(token); // Clean up expired token
+    return false;
+  }
+  
+  return true;
+}
+
+// Store tokens with their expiration times
+const csrfTokens = new Map<string, number>();
+
+// Static test credentials
 const TEST_CREDENTIALS = {
   username: "devtest@direct-payph.com",
   password: "password123"
 };
 
-// Debug helper function to log requests with more details
+// Debug helper function
 function logRequest(req: Request, message = "") {
   const url = new URL(req.url);
   console.log(`[${new Date().toISOString()}] ${req.method} ${url.pathname}${message ? " - " + message : ""}`);
@@ -69,17 +98,17 @@ serve(async (req) => {
     // Handle different API endpoints
     if (endpoint[0] === "auth") {
       if (endpoint[1] === "csrf" && req.method === "GET") {
-        // Generate and store a simple CSRF token
-        const token = crypto.randomUUID();
-        console.log("Generated CSRF token:", token);
+        // Generate new CSRF token with expiration
+        const csrfData = generateCSRFToken();
+        console.log("Generated CSRF token:", csrfData.token);
         
-        // Store token with simplified validation (just store boolean)
-        csrfTokens.set(token, true);
+        // Store token with expiration
+        csrfTokens.set(csrfData.token, csrfData.expires);
         
         return new Response(
           JSON.stringify({
-            csrf_token: token,
-            expires_at: new Date(Date.now() + 3600000).toISOString()
+            csrf_token: csrfData.token,
+            expires_at: new Date(csrfData.expires).toISOString()
           }),
           { 
             headers: { 
@@ -93,7 +122,6 @@ serve(async (req) => {
       
       if (endpoint[1] === "login" && req.method === "POST") {
         try {
-          // Log the full request for debugging
           const body = await req.json();
           console.log("Login request body:", body);
           
@@ -101,11 +129,11 @@ serve(async (req) => {
           const csrfToken = req.headers.get("x-csrf-token");
           console.log("Received CSRF token:", csrfToken);
           
-          if (!csrfToken || !csrfTokens.has(csrfToken)) {
-            console.log("CSRF validation failed - Token not found in store");
+          if (!csrfToken || !validateCSRFToken(csrfToken, csrfTokens)) {
+            console.log("CSRF validation failed - Token invalid or expired");
             return new Response(
               JSON.stringify({ 
-                error: "Invalid or missing CSRF token",
+                error: "Invalid or expired CSRF token",
                 details: "Please obtain a new CSRF token and try again" 
               }),
               { 
@@ -326,3 +354,4 @@ serve(async (req) => {
     );
   }
 });
+
