@@ -1,0 +1,93 @@
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+export function SandboxAuth() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('sandbox_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (error || !data) {
+        toast.error("Invalid credentials");
+        return;
+      }
+
+      // For demo purposes, simple password check
+      if (data.password !== '$2a$10$X7o4CoxCXxyL.f3cM7XRW.PbvwQXcA5sSz1a9fZZbkKqwQhT2hCJm') {
+        toast.error("Invalid credentials");
+        return;
+      }
+
+      localStorage.setItem('sandbox_user', JSON.stringify(data));
+      toast.success("Login successful!");
+      navigate('/sandbox');
+    } catch (error) {
+      toast.error("An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Sandbox Login</CardTitle>
+        <CardDescription>
+          Use the sandbox credentials to test the API endpoints.
+          <br />
+          <span className="text-sm font-mono mt-2 block">
+            Email: developer@directpay.com
+            <br />
+            Password: directpay123
+          </span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="developer@directpay.com"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

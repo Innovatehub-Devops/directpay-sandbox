@@ -9,7 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      sandbox_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password?: string
+        }
+        Relationships: []
+      }
+      webhook_tests: {
+        Row: {
+          body: Json | null
+          created_at: string
+          headers: Json | null
+          id: string
+          method: string
+          response: Json | null
+          status_code: number | null
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          body?: Json | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          method: string
+          response?: Json | null
+          status_code?: number | null
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: Json | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          method?: string
+          response?: Json | null
+          status_code?: number | null
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_tests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "sandbox_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
