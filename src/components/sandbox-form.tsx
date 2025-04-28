@@ -203,7 +203,7 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
   };
 
   const getCodeExample = (step: string, language: string) => {
-    const baseUrl = "https://api.directpay.com/v1";
+    const baseUrl = apiBaseUrl;
     
     switch(step) {
       case 'step1':
