@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // CORS headers to allow requests from any origin
@@ -32,6 +33,8 @@ serve(async (req) => {
         const expiresAt = new Date(Date.now() + 3600000).toISOString();
         
         csrfTokens.set(token, { expiresAt });
+        
+        console.log("Generated CSRF token:", token);
         
         return new Response(
           JSON.stringify({

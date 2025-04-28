@@ -23,6 +23,7 @@ const Sandbox = () => {
   const [rawResponse, setRawResponse] = useState<string | null>(null);
   const [debugHeaders, setDebugHeaders] = useState<Record<string, string> | null>(null);
   const [isTestingEndpoint, setIsTestingEndpoint] = useState(false);
+  const [isTestingRemoteEndpoint, setIsTestingRemoteEndpoint] = useState(false);
 
   // Simple test function to verify API connectivity
   useEffect(() => {
@@ -105,17 +106,24 @@ const Sandbox = () => {
   }, []);
 
   // Debug function to manually test an endpoint
-  const debugTestEndpoint = async () => {
-    setIsTestingEndpoint(true);
+  const debugTestEndpoint = async (apiUrl: string) => {
+    const isRemote = apiUrl === API_BASE_URL;
+    
+    if (isRemote) {
+      setIsTestingRemoteEndpoint(true);
+    } else {
+      setIsTestingEndpoint(true);
+    }
+    
     setRawResponse(null);
     setDebugHeaders(null);
     
     try {
       const endpoint = "/auth/csrf";
-      const url = `${LOCAL_API_BASE_URL}${endpoint}`;
+      const url = `${apiUrl}${endpoint}`;
       
       console.log(`Debug testing endpoint: ${url}`);
-      toast.info(`Testing ${url}...`);
+      toast.info(`Testing ${isRemote ? 'remote' : 'local'} API: ${url}...`);
       
       const response = await fetch(url, {
         method: "GET",
@@ -140,20 +148,24 @@ const Sandbox = () => {
         const jsonResponse = JSON.parse(textResponse);
         console.log("Response as JSON:", jsonResponse);
         if (jsonResponse && jsonResponse.csrf_token) {
-          toast.success("CSRF token retrieved successfully!");
+          toast.success(`${isRemote ? 'Remote' : 'Local'} API returned a valid CSRF token!`);
         } else {
-          toast.warning("Response does not contain a valid CSRF token");
+          toast.warning(`${isRemote ? 'Remote' : 'Local'} response does not contain a valid CSRF token`);
         }
       } catch (e) {
         console.log("Response is not valid JSON");
-        toast.warning("Response is not valid JSON");
+        toast.warning(`${isRemote ? 'Remote' : 'Local'} response is not valid JSON`);
       }
       
     } catch (error) {
-      console.error("Debug test error:", error);
+      console.error(`Debug test error (${isRemote ? 'remote' : 'local'}):", error`);
       toast.error(`Test failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
-      setIsTestingEndpoint(false);
+      if (isRemote) {
+        setIsTestingRemoteEndpoint(false);
+      } else {
+        setIsTestingEndpoint(false);
+      }
     }
   };
 
@@ -178,20 +190,31 @@ const Sandbox = () => {
             </div>
           )}
           
-          {/* Debug test button */}
+          {/* Debug test buttons */}
           <div className="mt-4 p-4 border border-yellow-300 bg-yellow-50 rounded-md">
             <h2 className="text-lg font-semibold text-yellow-800 mb-2">API Debug Tester</h2>
             <p className="text-sm text-yellow-700 mb-4">
-              This will directly test the CSRF endpoint to see what response it returns.
+              Test both local and remote APIs directly to see what response they return.
             </p>
-            <Button 
-              variant="outline" 
-              onClick={debugTestEndpoint}
-              disabled={isTestingEndpoint}
-              className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
-            >
-              {isTestingEndpoint ? "Testing..." : "Test /auth/csrf Endpoint"}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => debugTestEndpoint(LOCAL_API_BASE_URL)}
+                disabled={isTestingEndpoint || isTestingRemoteEndpoint}
+                className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+              >
+                {isTestingEndpoint ? "Testing..." : "Test Local API (/functions/v1/sandbox-api/auth/csrf)"}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => debugTestEndpoint(API_BASE_URL)}
+                disabled={isTestingEndpoint || isTestingRemoteEndpoint}
+                className="border-amber-500 text-amber-700 hover:bg-amber-100"
+              >
+                {isTestingRemoteEndpoint ? "Testing..." : "Test Remote API (sandbox.direct-payph.com/auth/csrf)"}
+              </Button>
+            </div>
             
             {rawResponse && (
               <Card className="mt-4">
