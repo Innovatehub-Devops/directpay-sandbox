@@ -1,55 +1,37 @@
-
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
+import { AdminDashboardPreview } from "@/components/admin-dashboard-preview";
 
 const Index = () => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 overflow-hidden">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
             <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary animate-fade-in">
                 Developer API
               </div>
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl animate-fade-in [animation-delay:200ms]">
                 Direct Pay API
               </h1>
-              <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed animate-fade-in [animation-delay:400ms]">
                 The fastest way to integrate secure payments into your application. Use our
                 developer-friendly API to process payments in minutes, not days.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Button asChild size="lg">
+              <div className="flex flex-wrap gap-4 animate-fade-in [animation-delay:600ms]">
+                <Button asChild size="lg" className="animate-scale hover:scale-105 transition-transform">
                   <NavLink to="/docs">Explore Documentation</NavLink>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="outline" size="lg" className="animate-scale hover:scale-105 transition-transform">
                   <NavLink to="/sandbox">Try the Sandbox</NavLink>
                 </Button>
               </div>
             </div>
-            <div className="mx-auto lg:ml-auto">
-              <div className="code-block rounded-xl overflow-hidden">
-                <pre className="text-sm sm:text-base p-4 md:p-6 overflow-x-auto">
-                  <code>{`// Simple payment integration
-import { DirectPayAPI } from '@directpay/sdk';
-
-const api = new DirectPayAPI({
-  apiKey: process.env.DIRECTPAY_API_KEY
-});
-
-// Create a payment request
-const payment = await api.payments.create({
-  amount: 5000, // $50.00
-  currency: 'USD',
-  description: 'Premium subscription',
-  return_url: 'https://example.com/success'
-});
-
-// Redirect customer to payment page
-redirect(payment.checkout_url);`}</code>
-                </pre>
+            <div className="mx-auto lg:ml-auto perspective-[2000px] animate-fade-in [animation-delay:800ms]">
+              <div className="transform hover:rotate-y-[-12deg] transition-transform duration-500">
+                <AdminDashboardPreview />
               </div>
             </div>
           </div>

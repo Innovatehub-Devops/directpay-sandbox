@@ -7,52 +7,31 @@ export function Footer() {
   return (
     <footer className="border-t bg-background">
       <div className="container py-8 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="animate-fade-in">
             <h3 className="text-lg font-semibold mb-4">Direct Pay API</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
               Secure, fast, and reliable payment processing for developers
             </p>
           </div>
 
-          <div>
+          <div className="animate-fade-in [animation-delay:200ms]">
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <NavLink to="/docs" className="text-muted-foreground hover:text-primary">
+                <NavLink to="/docs" className="text-muted-foreground hover:text-primary transition-colors">
                   Documentation
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/sandbox" className="text-muted-foreground hover:text-primary">
+                <NavLink to="/sandbox" className="text-muted-foreground hover:text-primary transition-colors">
                   API Sandbox
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/access" className="text-muted-foreground hover:text-primary">
+                <NavLink to="/access" className="text-muted-foreground hover:text-primary transition-colors">
                   Get Access
                 </NavLink>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Legal</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary">
-                  Contact Us
-                </a>
               </li>
             </ul>
           </div>
