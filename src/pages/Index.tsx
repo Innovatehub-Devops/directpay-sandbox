@@ -6,43 +6,42 @@ import { MobileWalletPreview } from "@/components/mobile-wallet-preview";
 const Index = () => {
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Fixed height and overflow issues */}
+      {/* Hero Section - Removed animations */}
       <section className="w-full py-16 md:py-24 lg:py-32 relative overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 absolute inset-0 -z-10"></div>
         <div className="container px-4 md:px-6 relative z-10">
           <div className="grid gap-6 lg:grid-cols-[1fr,1.5fr] lg:gap-12 items-center">
             <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary animate-fade-in">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
                 Developer API
               </div>
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl animate-fade-in [animation-delay:200ms]">
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Direct Pay API
               </h1>
-              <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed animate-fade-in [animation-delay:400ms]">
+              <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 The fastest way to integrate secure payments into your application. Use our
                 developer-friendly API to process payments in minutes, not days.
               </p>
-              <div className="flex flex-wrap gap-4 animate-fade-in [animation-delay:600ms]">
-                <Button asChild size="lg" className="animate-scale hover:scale-105 transition-transform">
+              <div className="flex flex-wrap gap-4">
+                <Button asChild size="lg">
                   <NavLink to="/docs">Explore Documentation</NavLink>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="animate-scale hover:scale-105 transition-transform">
+                <Button asChild variant="outline" size="lg">
                   <NavLink to="/sandbox">Try the Sandbox</NavLink>
                 </Button>
               </div>
             </div>
             <div className="relative lg:h-auto">
-              <div className="flex items-center justify-center lg:transform-none animate-fade-in [animation-delay:800ms]">
+              <div className="flex items-center justify-center lg:transform-none">
                 <div className="relative w-full">
-                  <div className="transform hover:-rotate-y-8 transition-transform duration-500">
+                  <div>
                     <AdminDashboardLaptop />
                   </div>
-                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 transform hover:rotate-y-8 hover:translate-x-4 transition-all duration-500 max-w-[30%] lg:max-w-[40%]">
+                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 max-w-[30%] lg:max-w-[40%]">
                     <MobileWalletPreview />
                   </div>
                 </div>
               </div>
-              {/* Decorative elements with improved opacity and z-index */}
               <div className="absolute -z-10 pointer-events-none inset-0">
                 <div className="absolute right-1/2 bottom-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/20 rounded-full blur-[120px] opacity-40" />
                 <div className="absolute left-1/2 top-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-indigo-500/20 rounded-full blur-[120px] opacity-40" />
@@ -50,7 +49,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-        {/* Additional background elements for better visual effect */}
         <div className="absolute inset-0 -z-20 bg-grid-pattern opacity-5"></div>
       </section>
 
@@ -133,7 +131,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-        {/* Subtle background pattern */}
         <div className="absolute inset-0 -z-10 bg-grid-pattern opacity-5"></div>
       </section>
     </div>
