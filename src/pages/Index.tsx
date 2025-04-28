@@ -8,8 +8,8 @@ const Index = () => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 overflow-hidden">
-        <div className="container px-4 md:px-6">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/5 dark:via-purple-500/5 dark:to-pink-500/5 relative overflow-hidden">
+        <div className="container px-4 md:px-6 relative z-10">
           <div className="grid gap-6 lg:grid-cols-[1fr,1.5fr] lg:gap-12 items-center">
             <div className="space-y-4">
               <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary animate-fade-in">
@@ -42,18 +42,20 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              {/* Decorative elements */}
+              {/* Decorative elements with improved opacity and z-index */}
               <div className="absolute -z-10 pointer-events-none inset-0">
-                <div className="absolute right-1/2 bottom-1/2 w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[120px] opacity-50" />
-                <div className="absolute left-1/2 top-1/2 w-[500px] h-[500px] bg-indigo-500/30 rounded-full blur-[120px] opacity-50" />
+                <div className="absolute right-1/2 bottom-1/2 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] opacity-40" />
+                <div className="absolute left-1/2 top-1/2 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] opacity-40" />
               </div>
             </div>
           </div>
         </div>
+        {/* Additional background elements for better visual effect */}
+        <div className="absolute inset-0 -z-20 bg-grid-pattern opacity-5"></div>
       </section>
 
-      {/* Features Section */}
-      <section className="w-full py-12 md:py-24">
+      {/* Features Section - Improved spacing and responsive design */}
+      <section className="w-full py-12 md:py-24 bg-background">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
@@ -68,38 +70,38 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3">
-            <div className="grid gap-1">
+          <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Simple Integration</h3>
               <p className="text-sm text-muted-foreground">
                 Integrate payments with just a few lines of code using our well-documented API.
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Sandbox Environment</h3>
               <p className="text-sm text-muted-foreground">
                 Test your integration thoroughly in our sandbox environment before going live.
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Robust Security</h3>
               <p className="text-sm text-muted-foreground">
                 Industry-leading security with end-to-end encryption and fraud prevention.
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Comprehensive Webhooks</h3>
               <p className="text-sm text-muted-foreground">
                 Real-time notifications for all payment events via customizable webhooks.
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Multiple Payment Methods</h3>
               <p className="text-sm text-muted-foreground">
                 Support for credit/debit cards, mobile wallets, and local payment methods.
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1 p-4 hover:bg-muted/50 rounded-lg transition-colors">
               <h3 className="text-lg font-bold">Detailed Reporting</h3>
               <p className="text-sm text-muted-foreground">
                 Access comprehensive reports and analytics on all your transactions.
@@ -109,8 +111,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 bg-muted">
+      {/* CTA Section - Improved contrast and accessibility */}
+      <section className="w-full py-12 md:py-24 bg-muted relative">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
@@ -131,6 +133,8 @@ const Index = () => {
             </div>
           </div>
         </div>
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 -z-10 bg-grid-pattern opacity-5"></div>
       </section>
     </div>
   );
