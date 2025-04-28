@@ -50,12 +50,15 @@ export function SandboxAuth() {
 
       if (error || !data) {
         toast.error("Invalid credentials");
+        setIsLoading(false);
         return;
       }
 
       // For demo purposes, simple password check
-      if (data.password !== '$2a$10$X7o4CoxCXxyL.f3cM7XRW.PbvwQXcA5sSz1a9fZZbkKqwQhT2hCJm') {
+      // In a real app, we would use proper password hashing
+      if (password !== "directpay123") {
         toast.error("Invalid credentials");
+        setIsLoading(false);
         return;
       }
 
@@ -69,8 +72,8 @@ export function SandboxAuth() {
       
       navigate('/sandbox');
     } catch (error) {
+      console.error("Login error:", error);
       toast.error("An error occurred during login");
-    } finally {
       setIsLoading(false);
     }
   };

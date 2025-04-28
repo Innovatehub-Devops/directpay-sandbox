@@ -74,7 +74,8 @@ serve(async (req) => {
     
     if (type === "approval_notification") {
       // Send approval notification to the user
-      const loginUrl = `https://your-directpay-frontend.com/sandbox/auth?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
+      const frontendUrl = req.headers.get("referer") || "https://directpay-sandbox-frontend.com";
+      const loginUrl = `${frontendUrl}/sandbox/auth?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
       
       const userMailOptions = {
         from: `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
