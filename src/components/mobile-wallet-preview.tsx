@@ -1,5 +1,6 @@
 
 import { Card } from "@/components/ui/card";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export function MobileWalletPreview() {
   return (
@@ -11,20 +12,27 @@ export function MobileWalletPreview() {
             <h3 className="text-sm font-semibold">E-Wallet Balance</h3>
             <div className="text-2xl font-bold text-primary">$2,459.50</div>
           </div>
-          <Card className="p-3">
+          <Card className="p-3 relative overflow-hidden">
             <div className="flex justify-between items-center">
               <div className="text-sm">Recent Transfer</div>
-              <div className="text-sm font-medium text-green-500">+$250.00</div>
+              <div className="text-sm font-medium text-green-500 animate-pulse">+$250.00</div>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 bg-green-500/20 w-full">
+              <div className="h-full bg-green-500 w-1/2 animate-[progress_2s_ease-in-out_infinite]" />
             </div>
           </Card>
           <div className="grid grid-cols-2 gap-2">
-            <Card className="p-3">
+            <Card className="p-3 hover:bg-accent transition-colors group cursor-pointer">
               <div className="text-xs font-medium">Send</div>
-              <div className="text-lg font-bold text-primary mt-1">→</div>
+              <div className="text-lg font-bold text-primary mt-1 group-hover:translate-x-1 transition-transform">
+                <ArrowRight className="h-5 w-5" />
+              </div>
             </Card>
-            <Card className="p-3">
+            <Card className="p-3 hover:bg-accent transition-colors group cursor-pointer">
               <div className="text-xs font-medium">Request</div>
-              <div className="text-lg font-bold text-primary mt-1">←</div>
+              <div className="text-lg font-bold text-primary mt-1 group-hover:-translate-x-1 transition-transform">
+                <ArrowLeft className="h-5 w-5" />
+              </div>
             </Card>
           </div>
         </div>
