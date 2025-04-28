@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as nodemailer from "npm:nodemailer@6.9.1";
 
@@ -34,7 +33,7 @@ serve(async (req) => {
         transporter = nodemailer.createTransport({
           host: "smtp.gmail.com",
           port: 587,
-          secure: false, // true for 465, false for other ports
+          secure: false,
           auth: {
             user: Deno.env.get("SMTP_USERNAME"),
             pass: Deno.env.get("SMTP_PASSWORD"),
@@ -66,6 +65,57 @@ serve(async (req) => {
       throw new Error(`SMTP setup failed: ${smtpError.message}`);
     }
 
+    // Process registration notifications
+    if (type === "registration_notification") {
+      const adminEmail = "admin@innovatehub.ph";
+      
+      console.log(`Sending registration notification to admin: ${adminEmail}`);
+      
+      const mailOptions = {
+        from: isEthereal ? testAccount.user : `"DirectPay API" <${Deno.env.get("SMTP_USERNAME")}>`,
+        to: adminEmail,
+        subject: "New User Registration",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+            <h2 style="color: #333;">New User Registration</h2>
+            
+            <div style="margin: 20px 0;">
+              <p><strong>Name:</strong> ${userData.name}</p>
+              <p><strong>Email:</strong> ${userData.email}</p>
+              <p><strong>Registration Time:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">A new user has registered for the DirectPay API.</p>
+          </div>
+        `,
+      };
+
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Registration notification email sent:", info);
+        
+        if (isEthereal) {
+          console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Registration notification sent",
+            testMode: isEthereal 
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      } catch (emailError) {
+        console.error("Failed to send registration notification:", emailError);
+        throw new Error(`Failed to send notification email: ${emailError.message}`);
+      }
+    }
+
+    // Keep existing email sending functionality for other types
     if (type === "request_approval") {
       const adminEmail = "admin@innovatehub.ph";
       const approvalUrl = `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/approve-sandbox-access?token=${approvalToken}&email=${encodeURIComponent(userData.email)}`;
