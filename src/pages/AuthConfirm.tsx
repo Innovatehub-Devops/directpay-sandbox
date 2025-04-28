@@ -14,11 +14,15 @@ const AuthConfirm = () => {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
+        // Get both potential token parameter names
         const token = searchParams.get("token_hash") || searchParams.get("token");
         const type = searchParams.get("type");
         
+        console.log("Confirming email with:", { token, type });
+        
         if (!token || !type) {
-          throw new Error("Missing verification parameters");
+          console.error("Missing verification parameters");
+          throw new Error("Missing verification parameters. The verification link may be invalid or expired.");
         }
 
         // Using standard Supabase email verification
@@ -28,14 +32,16 @@ const AuthConfirm = () => {
         });
 
         if (error) {
+          console.error("Verification error:", error);
           throw error;
         }
 
         toast.success("Email confirmed successfully!");
-        setTimeout(() => navigate('/sandbox'), 2000);
+        console.log("Email confirmed successfully, redirecting to sandbox");
+        setTimeout(() => navigate('/sandbox', { replace: true }), 2000);
       } catch (error: any) {
         console.error("Confirmation error:", error);
-        setError(error.message || "Failed to confirm email");
+        setError(error.message || "Failed to confirm email. The link may have expired.");
         toast.error(error.message || "Failed to confirm email");
       } finally {
         setIsProcessing(false);
@@ -60,6 +66,9 @@ const AuthConfirm = () => {
         ) : error ? (
           <div className="bg-destructive/15 p-6 rounded-md">
             <p className="text-destructive mb-4">{error}</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              You can try clicking the verification link again or contact support if the issue persists.
+            </p>
             <Button onClick={() => navigate('/sandbox/auth')}>
               Return to Login
             </Button>
@@ -68,7 +77,7 @@ const AuthConfirm = () => {
           <div className="bg-green-50 p-6 rounded-md">
             <h2 className="text-green-800 font-medium mb-2">Success!</h2>
             <p className="text-green-700 mb-4">Your email has been verified!</p>
-            <p className="text-muted-foreground mb-4">Redirecting you to the application...</p>
+            <p className="text-muted-foreground mb-4">Redirecting you to the sandbox...</p>
             <Button onClick={() => navigate('/sandbox')}>
               Continue to Sandbox
             </Button>

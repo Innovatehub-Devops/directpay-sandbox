@@ -15,22 +15,6 @@ const Sandbox = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check for test account session first
-        const testSession = localStorage.getItem('supabase.auth.token');
-        if (testSession) {
-          try {
-            const parsedSession = JSON.parse(testSession);
-            if (parsedSession?.currentSession?.user?.user_metadata?.is_test_account) {
-              console.log("Test account session found, allowing access");
-              setIsAuthenticated(true);
-              setIsLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.error("Error parsing test session:", e);
-          }
-        }
-        
         // Check for regular Supabase session
         const { data } = await supabase.auth.getSession();
         console.log("Sandbox page - Auth check:", data.session ? "Authenticated" : "Not authenticated");
@@ -56,8 +40,6 @@ const Sandbox = () => {
       (event, session) => {
         console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT') {
-          // Also clear test account session if exists
-          localStorage.removeItem('supabase.auth.token');
           navigate('/sandbox/auth', { replace: true });
         } else if (session) {
           setIsAuthenticated(true);
@@ -71,8 +53,6 @@ const Sandbox = () => {
   }, [navigate]);
 
   const handleSignOut = () => {
-    // Clear both Supabase auth session and any test account session
-    localStorage.removeItem('supabase.auth.token');
     supabase.auth.signOut();
   };
 

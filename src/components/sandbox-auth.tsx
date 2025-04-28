@@ -9,16 +9,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle } from "lucide-react";
 
-// Test accounts for sandbox environment
-const TEST_ACCOUNTS = ['test.dev1@directpay.com', 'test.dev2@directpay.com'];
-const TEST_PASSWORD = 'directpay123';
-
 export function SandboxAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [verificationSent, setVerificationSent] = useState(false);
   const navigate = useNavigate();
   
   // Check if user is already authenticated
@@ -44,39 +41,7 @@ export function SandboxAuth() {
     setErrorMsg("");
 
     try {
-      // Special handling for test accounts
-      if (TEST_ACCOUNTS.includes(email.trim()) && password === TEST_PASSWORD) {
-        console.log("Test account login successful");
-        
-        // Create a custom session for test accounts
-        const testUser = {
-          id: `test-${Date.now()}`,
-          email: email.trim(),
-          role: 'authenticated',
-          app_metadata: { provider: 'test' },
-          user_metadata: { is_test_account: true }
-        };
-        
-        // Store auth data in localStorage to persist the session
-        localStorage.setItem('supabase.auth.token', JSON.stringify({
-          currentSession: {
-            access_token: `test-token-${Date.now()}`,
-            user: testUser
-          }
-        }));
-        
-        toast.success("Login successful!");
-        
-        // Use navigate with replace to prevent back navigation issues
-        setTimeout(() => {
-          console.log("Navigating to /sandbox after test account login");
-          navigate('/sandbox', { replace: true });
-        }, 500);
-        
-        return;
-      }
-      
-      // Regular Supabase authentication for real accounts
+      // Standard Supabase authentication for all accounts
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -88,11 +53,8 @@ export function SandboxAuth() {
         toast.error(error.message || "Invalid credentials");
       } else if (data.user) {
         toast.success("Login successful!");
-        
-        setTimeout(() => {
-          console.log("Navigating to /sandbox after Supabase auth");
-          navigate('/sandbox', { replace: true });
-        }, 500);
+        console.log("Navigating to /sandbox after successful login");
+        navigate('/sandbox', { replace: true });
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -107,6 +69,7 @@ export function SandboxAuth() {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg("");
+    setVerificationSent(false);
 
     if (password.length < 6) {
       setErrorMsg("Password must be at least 6 characters");
@@ -125,13 +88,19 @@ export function SandboxAuth() {
       });
 
       if (error) {
+        console.error("Registration error:", error);
         setErrorMsg(error.message);
         toast.error(error.message || "Registration failed");
       } else if (data.user) {
+        console.log("Registration response:", data);
+        
         if (data.session) {
+          // User is immediately signed in (email confirmation disabled)
           toast.success("Registration successful!");
-          window.location.href = '/sandbox';
+          navigate('/sandbox', { replace: true });
         } else {
+          // Email confirmation required
+          setVerificationSent(true);
           toast.success("Registration successful! Please check your email for confirmation.");
         }
       }
@@ -143,6 +112,36 @@ export function SandboxAuth() {
       setIsLoading(false);
     }
   };
+
+  if (verificationSent) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Email Verification Required</CardTitle>
+          <CardDescription>
+            We've sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-green-50 p-6 rounded-md text-center">
+            <p className="text-green-700 mb-4">Please check your email to complete registration.</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              If you don't see the email, check your spam folder or click below to return to login.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setVerificationSent(false);
+                setIsRegistering(false);
+              }}
+            >
+              Return to Login
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
