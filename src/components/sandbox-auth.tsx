@@ -24,15 +24,20 @@ export function SandboxAuth() {
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        console.log("User already authenticated, redirecting to sandbox");
-        navigate('/sandbox');
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          console.log("User already authenticated, redirecting to sandbox");
+          // Use window.location for hard navigation
+          window.location.href = '/sandbox';
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
     
     checkAuth();
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +50,11 @@ export function SandboxAuth() {
         console.log("Test account login successful");
         toast.success("Login successful!");
         
-        // Force navigation after a short delay to ensure the toast is visible
+        // Use window.location for hard navigation after a short delay
         setTimeout(() => {
-          console.log("Navigating to /sandbox");
-          navigate('/sandbox', { replace: true });
-        }, 500);
+          console.log("Navigating to /sandbox using window.location");
+          window.location.href = '/sandbox';
+        }, 800);
         return;
       }
       
@@ -66,11 +71,11 @@ export function SandboxAuth() {
       } else if (data.user) {
         toast.success("Login successful!");
         
-        // Force navigation after a short delay
+        // Use window.location for hard navigation after a short delay
         setTimeout(() => {
           console.log("Navigating to /sandbox after Supabase auth");
-          navigate('/sandbox', { replace: true });
-        }, 500);
+          window.location.href = '/sandbox';
+        }, 800);
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -108,7 +113,7 @@ export function SandboxAuth() {
       } else if (data.user) {
         if (data.session) {
           toast.success("Registration successful!");
-          navigate('/sandbox');
+          window.location.href = '/sandbox';
         } else {
           toast.success("Registration successful! Please check your email for confirmation.");
         }

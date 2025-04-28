@@ -14,19 +14,30 @@ const Sandbox = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        console.log("Sandbox page - Auth check:", data.session ? "Authenticated" : "Not authenticated");
+        
+        if (!data.session) {
+          console.log("No session found, redirecting to /sandbox/auth");
+          navigate('/sandbox/auth');
+        } else {
+          console.log("Session found, allowing access to sandbox");
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
         navigate('/sandbox/auth');
-      } else {
-        setIsAuthenticated(true);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT') {
           navigate('/sandbox/auth');
         } else if (session) {
