@@ -1,80 +1,18 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { SandboxForm } from "@/components/sandbox-form";
 import { WebhookTester } from "@/components/webhook-tester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 const Sandbox = () => {
-  const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check for regular Supabase session
-        const { data } = await supabase.auth.getSession();
-        console.log("Sandbox page - Auth check:", data.session ? "Authenticated" : "Not authenticated");
-        
-        if (!data.session) {
-          console.log("No session found, redirecting to /sandbox/auth");
-          navigate('/sandbox/auth', { replace: true });
-        } else {
-          console.log("Session found, allowing access to sandbox");
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        navigate('/sandbox/auth', { replace: true });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event);
-        if (event === 'SIGNED_OUT') {
-          navigate('/sandbox/auth', { replace: true });
-        } else if (session) {
-          setIsAuthenticated(true);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
-  const handleSignOut = () => {
-    supabase.auth.signOut();
-  };
-
-  if (isLoading) {
-    return <div className="container mx-auto p-4 text-center">Loading...</div>;
-  }
-
-  if (!isAuthenticated) return null;
-
   return (
     <div className="container mx-auto p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">API Sandbox</h1>
-            <p className="text-muted-foreground">
-              Test DirectPay API endpoints in a safe environment. No real transactions will be processed.
-            </p>
-          </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">API Sandbox</h1>
+          <p className="text-muted-foreground">
+            Test DirectPay API endpoints in a safe environment. No real transactions will be processed.
+          </p>
         </div>
         
         <Tabs defaultValue="payment" className="space-y-4">

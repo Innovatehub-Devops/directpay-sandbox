@@ -8,10 +8,8 @@ import { Layout } from "./components/layout";
 import Index from "./pages/Index";
 import Documentation from "./pages/Documentation";
 import Sandbox from "./pages/Sandbox";
-import SandboxAuth from "./pages/SandboxAuth";
 import GetAccess from "./pages/GetAccess";
 import NotFound from "./pages/NotFound";
-import AuthConfirm from "./pages/AuthConfirm";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +25,7 @@ const App = () => (
             <Route path="/docs" element={<Documentation />} />
             <Route path="/docs/:endpointId" element={<Documentation />} />
             <Route path="/sandbox" element={<Sandbox />} />
-            <Route path="/sandbox/auth" element={<SandboxAuth />} />
             <Route path="/access" element={<GetAccess />} />
-            <Route path="/auth/confirm" element={<AuthConfirm />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
