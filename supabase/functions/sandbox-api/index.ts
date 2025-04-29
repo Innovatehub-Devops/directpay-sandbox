@@ -127,6 +127,24 @@ function validatePaymentRequest(body: any) {
   return errors;
 }
 
+// Add health check endpoint helper
+function handleHealthCheck() {
+  return new Response(
+    JSON.stringify({
+      status: "ok",
+      version: "1.0.0",
+      timestamp: new Date().toISOString()
+    }),
+    { 
+      headers: { 
+        "Content-Type": "application/json",
+        ...corsHeaders
+      },
+      status: 200 
+    }
+  );
+}
+
 serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -144,6 +162,11 @@ serve(async (req) => {
     const path = url.pathname.replace("/sandbox-api", "");
     const endpoint = path.split("/").filter(Boolean);
     console.log(`Processing ${req.method} request to ${path}`);
+
+    // Handle health check endpoint
+    if (path === "/health" && req.method === "GET") {
+      return handleHealthCheck();
+    }
 
     // Handle different API endpoints
     if (endpoint[0] === "auth") {
