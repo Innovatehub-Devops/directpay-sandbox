@@ -39,10 +39,9 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
 
   const callApi = async (endpoint: string, method: string, body?: any, headers?: any) => {
     try {
-      const apiUrl = window.location.hostname.includes("localhost") 
-        ? `${window.location.protocol}//${window.location.hostname}:54321/functions/v1/sandbox-api${endpoint}`
-        : `${apiBaseUrl}${endpoint}`;
-
+      // Updated to ensure proper URL is used based on environment
+      let apiUrl = `${apiBaseUrl}${endpoint}`;
+      
       console.log(`Calling API: ${method} ${apiUrl}`);
       
       const response = await fetch(apiUrl, {

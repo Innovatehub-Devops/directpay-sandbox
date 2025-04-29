@@ -32,51 +32,46 @@ async function generateCSRFToken(): Promise<string> {
   // Create a random token ID
   const tokenId = crypto.randomUUID();
   
-  // Create HMAC signature
+  // Create signature
+  const signature = await createSignature(`${tokenId}.${payloadStr}`);
+  
+  // Final token format: tokenId.payload.signature
+  return `${tokenId}.${btoa(payloadStr)}.${signature}`;
+}
+
+// Helper function to create HMAC signatures
+async function createSignature(data: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw", SECRET_KEY, { name: "HMAC", hash: "SHA-256" }, 
     false, ["sign"]
   );
   
-  const encodedPayload = new TextEncoder().encode(`${tokenId}.${payloadStr}`);
+  const encodedData = new TextEncoder().encode(data);
   const signature = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encodedPayload)
+    await crypto.subtle.sign("HMAC", key, encodedData)
   );
   
   // Convert signature to base64
-  const signatureBase64 = btoa(String.fromCharCode(...signature));
-  
-  // Final token format: tokenId.payload.signature
-  return `${tokenId}.${btoa(payloadStr)}.${signatureBase64}`;
+  return btoa(String.fromCharCode(...signature));
 }
 
 // Validate a CSRF token without needing server-side storage
 async function validateCSRFToken(token: string): Promise<boolean> {
   try {
     // Split the token into parts
-    const [tokenId, encodedPayload, signature] = token.split('.');
+    const parts = token.split('.');
     
-    if (!tokenId || !encodedPayload || !signature) {
+    if (parts.length !== 3) {
       console.log("Invalid token format");
       return false;
     }
     
+    const [tokenId, encodedPayload, receivedSignature] = parts;
+    
     // Verify signature
-    const key = await crypto.subtle.importKey(
-      "raw", SECRET_KEY, { name: "HMAC", hash: "SHA-256" }, 
-      false, ["verify"]
-    );
+    const expectedSignature = await createSignature(`${tokenId}.${encodedPayload}`);
     
-    const signatureBytes = Uint8Array.from(
-      atob(signature), c => c.charCodeAt(0)
-    );
-    
-    const dataToVerify = new TextEncoder().encode(`${tokenId}.${encodedPayload}`);
-    const isValid = await crypto.subtle.verify(
-      "HMAC", key, signatureBytes, dataToVerify
-    );
-    
-    if (!isValid) {
+    if (receivedSignature !== expectedSignature) {
       console.log("Invalid signature");
       return false;
     }
