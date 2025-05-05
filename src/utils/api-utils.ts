@@ -14,22 +14,37 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
     
     console.log(`Calling API: ${method} ${apiUrl}`);
     
-    const response = await fetch(apiUrl, {
+    // Define request options with proper CORS settings
+    const requestOptions: RequestInit = {
       method,
       headers: {
         'Content-Type': 'application/json',
         ...headers
       },
       body: body ? JSON.stringify(body) : undefined,
-      credentials: 'include' // Include cookies for CSRF tokens
-    });
+      credentials: 'include', // Include cookies for CSRF tokens
+      mode: 'cors' // Explicitly set CORS mode
+    };
+    
+    const response = await fetch(apiUrl, requestOptions);
 
     // Try to parse the response as JSON
     let data;
+    let responseText = '';
+    
     try {
-      data = await response.json();
+      // First try to get the text for debugging purposes
+      responseText = await response.text();
+      
+      // Then try to parse as JSON if not empty
+      if (responseText) {
+        data = JSON.parse(responseText);
+      } else {
+        data = {};
+      }
     } catch (e) {
-      data = { error: "Could not parse response as JSON" };
+      console.error("Failed to parse response:", responseText);
+      data = { error: "Could not parse response as JSON", rawResponse: responseText };
     }
     
     // Create the API response object
@@ -43,7 +58,7 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
 
     // Add error message for non-2xx responses
     if (!response.ok) {
-      apiResponse.errorMessage = data.error || `HTTP Error ${response.status}`;
+      apiResponse.errorMessage = data.error || data.message || `HTTP Error ${response.status}`;
       console.error(`API Error: ${apiResponse.errorMessage}`, data);
     }
     
