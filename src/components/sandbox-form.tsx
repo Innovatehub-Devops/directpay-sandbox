@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +11,8 @@ import { CashInStep } from "./cash-in-step";
 import { ResponseHistory } from "./response-history";
 import { ResponseDisplay } from "./response-display";
 import { ApiResponse, callApi } from "@/utils/api-utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface SandboxFormProps {
   apiBaseUrl: string;
@@ -29,11 +32,20 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentSimulator, setShowPaymentSimulator] = useState(false);
   const [paymentId, setPaymentId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Pre-fill the test credentials
+  useEffect(() => {
+    setUsername("devtest@direct-payph.com");
+    setPassword("password123");
+  }, []);
 
   const handleGetCSRFToken = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
+      console.log(`Getting CSRF token from: ${apiBaseUrl}/auth/csrf`);
       const apiResponse = await callApi(apiBaseUrl, "/auth/csrf", "GET");
       
       setResponse(apiResponse);
@@ -44,11 +56,15 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
         toast.success("CSRF token retrieved successfully");
         setActiveTab("step2");
       } else {
-        toast.error("Failed to get CSRF token");
+        const errorMsg = apiResponse.errorMessage || "Failed to get CSRF token";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error getting CSRF token:", error);
-      toast.error("Failed to get CSRF token");
+      const errorMsg = error instanceof Error ? error.message : "Failed to get CSRF token";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +82,10 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
     }
 
     setIsLoading(true);
+    setError(null);
     
     try {
+      console.log(`Attempting login with CSRF token: ${csrfToken.substring(0, 20)}...`);
       const apiResponse = await callApi(
         apiBaseUrl, 
         "/auth/login", 
@@ -84,11 +102,15 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
         toast.success("Login successful");
         setActiveTab("step3");
       } else {
-        toast.error("Login failed: " + (apiResponse.data.error || "Unknown error"));
+        const errorMsg = apiResponse.errorMessage || "Login failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error during login:", error);
-      toast.error("Login failed");
+      const errorMsg = error instanceof Error ? error.message : "Login failed";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +128,7 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
     }
 
     setIsLoading(true);
+    setError(null);
     
     try {
       const apiResponse = await callApi(
@@ -128,11 +151,15 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
         setPaymentId(apiResponse.data.payment_id);
         toast.success("Cash-in request created successfully");
       } else {
-        toast.error("Cash-in request failed: " + (apiResponse.data.error || "Unknown error"));
+        const errorMsg = apiResponse.errorMessage || "Cash-in request failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error creating cash-in request:", error);
-      toast.error("Cash-in request failed");
+      const errorMsg = error instanceof Error ? error.message : "Cash-in request failed";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -175,6 +202,14 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="step1">1. Get CSRF Token</TabsTrigger>

@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { CodeExamples } from "./code-examples";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 interface CsrfTokenStepProps {
   onGetToken: () => void;
@@ -12,6 +13,13 @@ interface CsrfTokenStepProps {
 }
 
 export function CsrfTokenStep({ onGetToken, isLoading, apiBaseUrl, csrfToken }: CsrfTokenStepProps) {
+  const [error, setError] = useState<string | null>(null);
+  
+  const handleGetToken = () => {
+    setError(null);
+    onGetToken();
+  };
+  
   return (
     <div className="space-y-4">
       <Alert className="bg-muted">
@@ -23,7 +31,7 @@ export function CsrfTokenStep({ onGetToken, isLoading, apiBaseUrl, csrfToken }: 
       </Alert>
       
       <Button 
-        onClick={onGetToken} 
+        onClick={handleGetToken} 
         disabled={isLoading} 
         className="w-full"
       >
@@ -34,6 +42,14 @@ export function CsrfTokenStep({ onGetToken, isLoading, apiBaseUrl, csrfToken }: 
         <div className="mt-2 p-2 bg-muted/50 border rounded text-xs font-mono overflow-x-auto">
           <p className="truncate">{csrfToken}</p>
         </div>
+      )}
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="p-3 border border-blue-200 bg-blue-50 rounded-md dark:border-blue-900 dark:bg-blue-950/50">

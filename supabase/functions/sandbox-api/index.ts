@@ -4,9 +4,10 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 // Enhanced CORS headers to allow requests from any origin during development
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token, origin, accept",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token, origin, accept, access-control-allow-origin",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Credentials": "true"
 };
 
 // Stateless CSRF token implementation
@@ -170,7 +171,7 @@ serve(async (req) => {
       });
     }
 
-    const path = url.pathname.replace("/sandbox-api", "");
+    const path = url.pathname.replace(/^\/sandbox-api\/?/, "");
     const endpoint = path.split("/").filter(Boolean);
     console.log(`Processing ${req.method} request to ${path}`);
 
