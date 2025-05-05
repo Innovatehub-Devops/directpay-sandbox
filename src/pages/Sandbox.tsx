@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
     return `${window.location.protocol}//${window.location.hostname}:54321/functions/v1/sandbox-api`;
   } 
   
-  // For all other environments (preview, production), use the full Supabase URL
+  // For all other environments (preview, production), use the full Supabase URL with proper protocol
   return `https://hcjzxnxvacejdujfmoaa.supabase.co/functions/v1/sandbox-api`;
 };
 

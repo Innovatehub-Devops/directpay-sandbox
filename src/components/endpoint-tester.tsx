@@ -18,6 +18,7 @@ const AVAILABLE_ENDPOINTS = [
   { id: "auth-login", path: "/auth/login", method: "POST", description: "Login" },
   { id: "payments-cash-in", path: "/payments/cash-in", method: "POST", description: "Create Cash-In Request" },
   { id: "payments-status", path: "/payments/status", method: "GET", description: "Check Payment Status" },
+  { id: "health", path: "/health", method: "GET", description: "API Health Check" },
 ];
 
 export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
@@ -176,6 +177,41 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
     }
   };
 
+  const getDefaultHeadersForEndpoint = () => {
+    if (selectedEndpoint === 'auth-login' && response) {
+      // Look for CSRF token in previous responses
+      const prevResponses = [response];
+      const csrfResponse = prevResponses.find(r => 
+        r.body && r.body.csrf_token && r.status === 200
+      );
+      
+      if (csrfResponse) {
+        return JSON.stringify({
+          "X-CSRF-Token": csrfResponse.body.csrf_token
+        }, null, 2);
+      }
+    }
+    
+    return "";
+  };
+
+  const getBodyPlaceholder = () => {
+    switch (selectedEndpoint) {
+      case 'auth-login':
+        return JSON.stringify({
+          username: "devtest@direct-payph.com",
+          password: "password123"
+        }, null, 2);
+      case 'payments-cash-in':
+        return JSON.stringify({
+          amount: 5000,
+          currency: "PHP"
+        }, null, 2);
+      default:
+        return '{"key": "value"}';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -197,6 +233,15 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
                 setResponseHeaders(null);
                 setCurlCommand("");
                 setError(null);
+                // Set appropriate default headers based on the endpoint
+                setHeaders(getDefaultHeadersForEndpoint());
+                
+                // Set appropriate default body based on the endpoint
+                if (AVAILABLE_ENDPOINTS.find(e => e.id === value)?.method === "POST") {
+                  setBody(getBodyPlaceholder());
+                } else {
+                  setBody("");
+                }
               }}
             >
               <SelectTrigger>
@@ -230,7 +275,7 @@ export function EndpointTester({ apiBaseUrl }: EndpointTesterProps) {
               <Input
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                placeholder='{"key": "value"}'
+                placeholder={getBodyPlaceholder()}
               />
             </div>
           )}

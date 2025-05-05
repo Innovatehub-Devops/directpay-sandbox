@@ -36,7 +36,9 @@ async function generateCSRFToken(): Promise<string> {
   const signature = await createSignature(`${tokenId}.${payloadStr}`);
   
   // Final token format: tokenId.payload.signature
-  return `${tokenId}.${btoa(payloadStr)}.${signature}`;
+  const token = `${tokenId}.${btoa(payloadStr)}.${signature}`;
+  console.log("Generated CSRF token:", token);
+  return token;
 }
 
 // Helper function to create HMAC signatures
@@ -58,11 +60,13 @@ async function createSignature(data: string): Promise<string> {
 // Validate a CSRF token without needing server-side storage
 async function validateCSRFToken(token: string): Promise<boolean> {
   try {
+    console.log("Validating CSRF token:", token);
+    
     // Split the token into parts
     const parts = token.split('.');
     
     if (parts.length !== 3) {
-      console.log("Invalid token format");
+      console.log("Invalid token format - expected 3 parts but got", parts.length);
       return false;
     }
     
@@ -72,17 +76,20 @@ async function validateCSRFToken(token: string): Promise<boolean> {
     const expectedSignature = await createSignature(`${tokenId}.${encodedPayload}`);
     
     if (receivedSignature !== expectedSignature) {
-      console.log("Invalid signature");
+      console.log("Invalid signature - signatures don't match");
+      console.log("Received:", receivedSignature);
+      console.log("Expected:", expectedSignature);
       return false;
     }
     
     // Check expiration
     const payload = JSON.parse(atob(encodedPayload)) as CSRFPayload;
     if (Date.now() > payload.expires) {
-      console.log("Token expired");
+      console.log("Token expired - expired at", new Date(payload.expires).toISOString());
       return false;
     }
     
+    console.log("CSRF token validation successful");
     return true;
   } catch (error) {
     console.error("Error validating token:", error);
@@ -101,6 +108,10 @@ function logRequest(req: Request, message = "") {
   const url = new URL(req.url);
   console.log(`[${new Date().toISOString()}] ${req.method} ${url.pathname}${message ? " - " + message : ""}`);
   console.log("  Headers:", Object.fromEntries(req.headers.entries()));
+  
+  if (req.method !== "GET" && req.method !== "OPTIONS") {
+    console.log("  Body will be parsed in the handler");
+  }
 }
 
 // Add payment validation helper
@@ -164,7 +175,8 @@ serve(async (req) => {
     console.log(`Processing ${req.method} request to ${path}`);
 
     // Handle health check endpoint
-    if (path === "/health" && req.method === "GET") {
+    if (path === "/health" || path === "" || path === "/") {
+      console.log("Handling health check request");
       return handleHealthCheck();
     }
 
@@ -173,7 +185,7 @@ serve(async (req) => {
       if (endpoint[1] === "csrf" && req.method === "GET") {
         // Generate stateless CSRF token
         const token = await generateCSRFToken();
-        console.log("Generated stateless CSRF token");
+        console.log("Generated stateless CSRF token:", token.substring(0, 20) + "...");
         
         // Extract expiration from the token for response
         const parts = token.split('.');
