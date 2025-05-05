@@ -5,6 +5,7 @@ export interface ApiResponse {
   endpoint: string;
   method: string;
   timestamp: string;
+  errorMessage?: string;
 }
 
 export const callApi = async (apiBaseUrl: string, endpoint: string, method: string, body?: any, headers?: any): Promise<ApiResponse> => {
@@ -19,18 +20,34 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
         'Content-Type': 'application/json',
         ...headers
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include' // Include cookies for CSRF tokens
     });
 
-    const data = await response.json();
+    // Try to parse the response as JSON
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      data = { error: "Could not parse response as JSON" };
+    }
     
-    return {
+    // Create the API response object
+    const apiResponse: ApiResponse = {
       data,
       status: response.status,
       endpoint,
       method,
       timestamp: new Date().toISOString()
     };
+
+    // Add error message for non-2xx responses
+    if (!response.ok) {
+      apiResponse.errorMessage = data.error || `HTTP Error ${response.status}`;
+      console.error(`API Error: ${apiResponse.errorMessage}`, data);
+    }
+    
+    return apiResponse;
   } catch (error) {
     console.error("API call failed:", error);
     
@@ -39,7 +56,8 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
       status: 500,
       endpoint,
       method,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      errorMessage: error instanceof Error ? error.message : "Network error"
     };
   }
 };
