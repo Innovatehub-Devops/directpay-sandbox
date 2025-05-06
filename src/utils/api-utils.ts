@@ -8,6 +8,16 @@ export interface ApiResponse {
   errorMessage?: string;
 }
 
+// Add session storage for CSRF token to maintain consistency
+export const storeCsrfToken = (token: string) => {
+  sessionStorage.setItem('csrf_token', token);
+  console.log('CSRF token stored in session storage:', token.substring(0, 20) + '...');
+};
+
+export const getCsrfToken = (): string => {
+  return sessionStorage.getItem('csrf_token') || '';
+};
+
 export const callApi = async (apiBaseUrl: string, endpoint: string, method: string, body?: any, headers?: any): Promise<ApiResponse> => {
   try {
     let apiUrl = `${apiBaseUrl}${endpoint}`;
@@ -52,6 +62,11 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
       // Then try to parse as JSON if not empty
       if (responseText) {
         data = JSON.parse(responseText);
+        
+        // If this is a CSRF token response, store it
+        if (endpoint === '/auth/csrf' && data.csrf_token) {
+          storeCsrfToken(data.csrf_token);
+        }
       } else {
         data = {};
       }

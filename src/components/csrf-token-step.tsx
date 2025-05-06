@@ -4,6 +4,7 @@ import { CodeExamples } from "./code-examples";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { storeCsrfToken } from "@/utils/api-utils";
 
 interface CsrfTokenStepProps {
   onGetToken: () => void;
@@ -19,6 +20,11 @@ export function CsrfTokenStep({ onGetToken, isLoading, apiBaseUrl, csrfToken }: 
     setError(null);
     onGetToken();
   };
+  
+  // Store the token when it changes
+  if (csrfToken) {
+    storeCsrfToken(csrfToken);
+  }
   
   return (
     <div className="space-y-4">

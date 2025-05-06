@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { getCsrfToken } from "@/utils/api-utils";
 
 // Updated function to get the API base URL with better fallbacks
 const getApiBaseUrl = () => {
@@ -71,6 +72,12 @@ const Sandbox = () => {
     testApiConnectivity(apiBaseUrl).then(connected => {
       setApiConnected(connected);
     });
+    
+    // Check for existing CSRF token
+    const existingToken = getCsrfToken();
+    if (existingToken) {
+      console.log('Found existing CSRF token:', existingToken.substring(0, 20) + '...');
+    }
   }, [apiBaseUrl]);
   
   return (

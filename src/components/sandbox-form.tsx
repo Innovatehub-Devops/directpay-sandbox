@@ -10,7 +10,7 @@ import { LoginStep } from "./login-step";
 import { CashInStep } from "./cash-in-step";
 import { ResponseHistory } from "./response-history";
 import { ResponseDisplay } from "./response-display";
-import { ApiResponse, callApi } from "@/utils/api-utils";
+import { ApiResponse, callApi, getCsrfToken } from "@/utils/api-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
@@ -19,7 +19,7 @@ interface SandboxFormProps {
 }
 
 export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
-  const [csrfToken, setCsrfToken] = useState("");
+  const [csrfToken, setCsrfToken] = useState(getCsrfToken());
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [amount, setAmount] = useState("");
@@ -39,7 +39,14 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
   useEffect(() => {
     setUsername("devtest@direct-payph.com");
     setPassword("password123");
-  }, []);
+    
+    // Check for existing CSRF token
+    const savedToken = getCsrfToken();
+    if (savedToken && !csrfToken) {
+      console.log('Retrieved saved CSRF token from session storage');
+      setCsrfToken(savedToken);
+    }
+  }, [csrfToken]);
 
   const handleGetCSRFToken = async () => {
     setIsLoading(true);
