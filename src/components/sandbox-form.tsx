@@ -33,6 +33,7 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
   const [showPaymentSimulator, setShowPaymentSimulator] = useState(false);
   const [paymentId, setPaymentId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Pre-fill the test credentials
   useEffect(() => {
@@ -82,7 +83,7 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
     }
 
     setIsLoading(true);
-    setError(null);
+    setLoginError(null);
     
     try {
       console.log(`Attempting login with CSRF token: ${csrfToken.substring(0, 20)}...`);
@@ -103,13 +104,13 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
         setActiveTab("step3");
       } else {
         const errorMsg = apiResponse.errorMessage || "Login failed";
-        setError(errorMsg);
+        setLoginError(errorMsg);
         toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error during login:", error);
       const errorMsg = error instanceof Error ? error.message : "Login failed";
-      setError(errorMsg);
+      setLoginError(errorMsg);
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);
@@ -236,6 +237,7 @@ export function SandboxForm({ apiBaseUrl }: SandboxFormProps) {
                   onLogin={handleLogin}
                   isLoading={isLoading}
                   apiBaseUrl={apiBaseUrl}
+                  error={loginError}
                 />
               </TabsContent>
               

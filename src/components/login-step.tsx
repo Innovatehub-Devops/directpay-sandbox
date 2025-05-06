@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CodeExamples } from "./code-examples";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, AlertCircle } from "lucide-react";
 
 interface LoginStepProps {
   username: string;
@@ -15,6 +15,7 @@ interface LoginStepProps {
   onLogin: () => void;
   isLoading: boolean;
   apiBaseUrl: string;
+  error?: string | null;
 }
 
 export function LoginStep({
@@ -25,7 +26,8 @@ export function LoginStep({
   onPasswordChange,
   onLogin,
   isLoading,
-  apiBaseUrl
+  apiBaseUrl,
+  error
 }: LoginStepProps) {
   return (
     <div className="space-y-4">
@@ -36,6 +38,14 @@ export function LoginStep({
           Use the retrieved CSRF token to authenticate with the API. Enter your credentials below.
         </AlertDescription>
       </Alert>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid w-full items-center gap-1.5">
         <Label htmlFor="username">Email</Label>
