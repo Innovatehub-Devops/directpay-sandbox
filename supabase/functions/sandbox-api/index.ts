@@ -171,7 +171,12 @@ serve(async (req) => {
       });
     }
 
-    const path = url.pathname.replace(/^\/sandbox-api\/?/, "");
+    // Fix path parsing to handle both with and without /sandbox-api prefix
+    let path = url.pathname;
+    if (path.startsWith("/sandbox-api")) {
+      path = path.replace(/^\/sandbox-api\/?/, "/");
+    }
+    
     const endpoint = path.split("/").filter(Boolean);
     console.log(`Processing ${req.method} request to ${path}`);
 

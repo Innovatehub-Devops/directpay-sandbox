@@ -23,7 +23,7 @@ export const callApi = async (apiBaseUrl: string, endpoint: string, method: stri
         ...headers
       },
       body: body ? JSON.stringify(body) : undefined,
-      credentials: 'include', // Include cookies for CSRF tokens
+      // Remove credentials: 'include' as it can cause CORS issues
       mode: 'cors' // Explicitly set CORS mode
     };
     

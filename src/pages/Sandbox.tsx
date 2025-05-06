@@ -33,6 +33,8 @@ const getApiBaseUrl = () => {
 // Test the API connectivity on load
 const testApiConnectivity = async (apiUrl: string) => {
   try {
+    // Important fix: Use /health path instead of appending to the base URL
+    // The edge function already handles /sandbox-api/ in the path parsing
     console.log(`Testing API connectivity to ${apiUrl}/health`);
     const response = await fetch(`${apiUrl}/health`, {
       method: 'GET',
